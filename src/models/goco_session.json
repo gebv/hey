@@ -1,0 +1,32 @@
+{
+	"PkgName": "models",
+	"Imports": ["github.com/golang/glog"],
+	"Models": [
+		{
+			"Name": "Session",
+			"Type": "dto",
+			"FactoryCustomCode": [
+				"model.Props = make(map[string]interface{})"
+			],
+			"Fields": [
+				{
+					"Name": "Id",
+					"Type": "string"
+				},
+				{
+					"Name": "Client",
+					"Type": "Client"
+				},
+
+				{
+					"Name": "Flags",
+					"Type": "StringArray"
+				},
+				{
+					"Name": "Props",
+					"Type": "map[string]interface{}"
+				}
+			]
+		}
+	]
+}

@@ -1,0 +1,131 @@
+{
+	"PkgName": "models",
+	"Imports": ["time", "github.com/lib/pq", "github.com/golang/glog"],
+	"Models": [
+		{
+			"Name": "ModelAbstract",
+			"Type": "dto",
+			"Fields": [
+				{
+					"Name": "IsRemoved",
+					"Type": "bool",
+					"Tags": {
+						"sql": "type:boolean;default:false"
+					}
+				},
+
+				{
+					"Name": "AtCreated",
+					"Type": "time.Time",
+					"Tags": {
+						"sql": "type:timestamp;default:null"
+					}
+				},
+				{
+					"Name": "AtUpdated",
+					"Type": "time.Time",
+					"Tags": {
+						"sql": "type:timestamp;default:null"
+					}
+				},
+				{
+					"Name": "AtRemoved",
+					"Type": "pq.NullTime",
+					"Tags": {
+						"sql": "type:timestamp;default:null"
+					}
+				}
+			]
+		},
+		{
+			"Name": "Trace",
+			"Type": "dto",
+			"Fields": [
+				{
+					"Name": "RequestId",
+					"Type": "string"
+				},
+				{
+					"Name": "Path",
+					"Type": "string"
+				},
+				{
+					"Name": "Ip",
+					"Type": "string"
+				},
+				{
+					"Name": "ClientId",
+					"Type": "string"
+				}
+			]
+		},
+		{
+			"Name": "AppError",
+			"Type": "dto",
+			"Fields": [
+				{
+					"Name": "Message",
+					"Type": "string"
+				},
+				{
+					"Name": "DevMessage",
+					"Type": "string"
+				},
+				{
+					"Name": "StatusCode",
+					"Type": "int"
+				},
+				{
+					"Name": "T",
+					"Type": "Trace"
+				}
+			]
+		},
+		{
+			"Name": "ResponseDTO",
+			"Type": "dto",
+			"FactoryCustomCode": [
+				"model.StatusCode = 400 // http.StatusBadRequest"
+			],
+			"Fields": [
+				{
+					"Name": "StatusCode",
+					"Type": "int"
+				},
+				{
+					"Name": "Message",
+					"Type": "string",
+					"Tags": {
+						"json": "message,omitempty"
+					}
+				},
+				{
+					"Name": "DevMessage",
+					"Type": "string",
+					"Tags": {
+						"json": "dev_message,omitempty"
+					}
+				},
+				{
+					"Name": "Data",
+					"Type": "interface{}",
+					"Tags": {
+						"json": "data,omitempty"
+					}
+				}
+			],
+			"Transformer": {
+				"From": [
+					{
+						"Name": "AppError",
+						"Map": {
+							"StatusCode": "StatusCode",
+							"Message": "Message",
+							"DevMessage": "DevMessage"
+						}
+					}
+				]
+			}
+		}
+	]
+}

@@ -1,0 +1,101 @@
+{
+	"PkgName": "models",
+	"Imports": ["time", "github.com/golang/glog"],
+	"Models": [
+		{
+			"Name": "Config",
+			"Type": "dto",
+			"Fields": [
+				{
+					"Name": "ServiceSettings",
+					"Type": "ServiceSettings",
+					"Tags": {
+						"json": "ServiceSettings"
+					}
+				},
+				{
+					"Name": "StorageSettings",
+					"Type": "StorageSettings",
+					"Tags": {
+						"json": "StorageSettings"
+					}
+				}
+			]
+		},
+		{
+			"Name": "ServiceSettings",
+			"Type": "dto",
+			"Fields": [
+				{
+					"Name": "ListenAddress",
+					"Type": "string",
+					"Tags": {
+						"json": "ListenAddress"
+					}
+				},
+				{
+					"Name": "Mode",
+					"Type": "string",
+					"Tags": {
+						"json": "Mode"
+					}
+				},
+				{
+					"Name": "TimeoutRequest",
+					"Type": "time.Duration",
+					"Tags": {
+						"json": "TimeoutRequest"
+					}
+				}
+			]
+		},
+		{
+			"Name": "StorageSettings",
+			"Type": "dto",
+			"Fields": [
+				{
+					"Name": "Network",
+					"Type": "string",
+					"Tags": {
+						"json": "Network"
+					}
+				},
+				{
+					"Name": "Host",
+					"Type": "string",
+					"Tags": {
+						"json": "Host"
+					}
+				},
+				{
+					"Name": "Port",
+					"Type": "string",
+					"Tags": {
+						"json": "Port"
+					}
+				},
+				{
+					"Name": "User",
+					"Type": "string",
+					"Tags": {
+						"json": "User"
+					}
+				},
+				{
+					"Name": "Password",
+					"Type": "string",
+					"Tags": {
+						"json": "Password"
+					}
+				},
+				{
+					"Name": "Database",
+					"Type": "string",
+					"Tags": {
+						"json": "Database"
+					}
+				}
+			]
+		}
+	]
+}

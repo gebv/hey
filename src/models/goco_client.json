@@ -1,0 +1,71 @@
+{
+	"PkgName": "models",
+	"Imports": ["github.com/golang/glog"],
+	"Models": [
+		{
+			"Name": "Client",
+			"Type": "database",
+			"TableName": "clients",
+			"Implements": ["ModelAbstract"],
+			"FactoryCustomCode": [],
+			"Fields": [
+				{
+					"Name": "ClientId",
+					"Type": "string",
+					"IsPrimaryKey": true
+				},
+				{
+					"Name": "Domain",
+					"Type": "string"
+				},
+				{
+					"Name": "IPv4",
+					"Type": "string"
+				},
+				{
+					"Name": "IPv6",
+					"Type": "string"
+				},
+				{
+					"Name": "Licenses",
+					"Type": "StringArray"
+				},
+				{
+					"Name": "Secret",
+					"Type": "string"
+				},
+				{
+					"Name": "Redirect",
+					"Type": "string"
+				},
+
+				{
+					"Name": "Scopes",
+					"Type": "StringArray"
+				},
+				{
+					"Name": "Flags",
+					"Type": "StringArray"
+				},
+				{
+					"Name": "ClientProps",
+					"Type": "ClientProps"
+				}
+			]
+		},
+		{
+			"Name": "ClientProps",
+			"Type": "dto",
+			"Fields": [
+				{
+					"Name": "FullName",
+					"Type": "string"
+				},
+				{
+					"Name": "Email",
+					"Type": "string"
+				}
+			]
+		}
+	]
+}
