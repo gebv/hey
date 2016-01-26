@@ -10,6 +10,15 @@ import (
 	"utils"
 )
 
+func ApiAppHandler(
+	h func(*Context, http.ResponseWriter, *http.Request),
+	licenses models.StringArray,
+	flags models.StringArray,
+) http.Handler {
+	return &handler{h, licenses, flags, true}
+}
+
+
 type handler struct {
 	handleFunc      func(*Context, http.ResponseWriter, *http.Request)
 	allowedLicenses models.StringArray // допустимые лицензии
@@ -25,7 +34,7 @@ func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	c.RouteName = GetRouteName(r)
 
-	glog.V(2).Infof("\t[%v] %v, route_name=%v", r.Method, r.URL.Path, c.RouteName)
+	glog.V(2).Infof("\t[%v] %v, route_name='%v'", r.Method, r.URL.Path, c.RouteName)
 
 	glog.Infof("flags = %v", h.requiredFlag)
 
@@ -35,6 +44,7 @@ func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ir := Srv.Store.Osin.HandleInfoRequest(resp, r)
 
 	if ir == nil {
+		c.Err = models.NewAppError()
 		c.Err.StatusCode = 401
 	}
 
@@ -48,10 +58,6 @@ func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if !h.isApi {
 		w.Header().Set("X-Frame-Options", "DENY")
 		w.Header().Set("Content-Security-Policy", "frame-ancestors none")
-
-		if utils.Cfg.ServiceSettings.Mode == utils.MODE_DEV {
-			// TODO: Пересобрать шаблоны
-		}
 	} else {
 		// All api responsed json
 		w.Header().Set("Content-Type", "application/json")

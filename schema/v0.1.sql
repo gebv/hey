@@ -1,3 +1,5 @@
+-- INSERT INTO client(id,secret,extra,redirect_uri) VALUES('demo', 'demo', 'b4c8dd5b-852c-460a-9b4a-26109f9162a2', 'http://192.168.1.36:65002/api/v1/oauth2/callback');
+
 CREATE TABLE IF NOT EXISTS clients (
 	client_id uuid NOT NULL PRIMARY KEY,
 	

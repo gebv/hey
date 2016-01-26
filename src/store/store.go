@@ -42,13 +42,17 @@ func NewStore() *StoreManager {
 	// config.AuthorizationExpiration = 5
 	// config.AccessExpiration = 30
 	config.ErrorStatusCode = 400
-	// config.AllowGetAccessRequest = false
+	config.AllowGetAccessRequest = false
 	// config.AllowedAuthorizeTypes = osin.AllowedAuthorizeType{osin.CODE, osin.TOKEN}
-	// config.AllowedAuthorizeTypes = osin.AllowedAuthorizeType{osin.CODE}
+	config.AllowedAuthorizeTypes = osin.AllowedAuthorizeType{osin.CODE}
 	config.AllowedAccessTypes = osin.AllowedAccessType{osin.AUTHORIZATION_CODE, osin.REFRESH_TOKEN}
 
 	// TODO: reserve tables client, authorize, access, refresh
-	_sm.Osin = osin.NewServer(config, postgres.New(_sm.db))
+	osinStorage := postgres.New(_sm.db)
+	if err := osinStorage.CreateSchemas(); err != nil {
+		panic("osin storage: err="+err.Error())
+	}
+	_sm.Osin = osin.NewServer(config, osinStorage)
 
 	return _sm
 }
@@ -80,7 +84,7 @@ func (sm StoreManager) ErrorLog(prefix string, args ...interface{}) {
 
 func setupConnection(c models.StorageSettings) (*sql.DB, error) {
 
-	addrs := fmt.Sprintf("postgres://%s:%s@%s/%s?sslmode=false", c.User, c.Password, c.Host, c.Database)
+	addrs := fmt.Sprintf("postgres://%s:%s@%s/%s?sslmode=disable", c.User, c.Password, c.Host, c.Database)
 
 	return sql.Open("postgres", addrs)
 }
