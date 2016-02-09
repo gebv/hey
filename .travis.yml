@@ -14,7 +14,7 @@ install: make vendor_get
 
 before_script:
   - psql -c 'create database hey;' -U postgres
-  - psql -U postgres -f schema/v0.1.sql
+  - psql -f schema/v0.1.sql -U postgres hey
   - cp config/config.json.travis config/config.json
   - 
 
