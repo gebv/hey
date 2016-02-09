@@ -1,5 +1,7 @@
 # hey
 
+[![Build Status](https://travis-ci.org/gebv/hey.svg?branch=master)](https://travis-ci.org/gebv/hey)
+
 Система комментариев.
 Механизм установки комментариев на странице аналогичный Disqus.
 

@@ -30,11 +30,11 @@ test:
 
 vendor_clean:
 	# find ./src -type d -not -name '*.run' | xargs rm
-	rm -dRf ./vendor
+	rm -Rf ./vendor
 	mkdir -p ./vendor
-	rm -dRf ./bin
+	rm -Rf ./bin
 	mkdir -p ./bin
-	rm -dRf ./pkg
+	rm -Rf ./pkg
 
 vendor_update: vendor_get
 	rm -rf `find ./vendor -type d -name .git` \
