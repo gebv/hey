@@ -108,7 +108,7 @@ CREATE TABLE IF NOT EXISTS threads (
 
 	related_event_id uuid, -- в случае root = nil, в других случая отражает event с которым связан "вверх" поток
 	parent_thread_id uuid, -- в случае root = nil
-	depth smallint,
+	depth int8,
 
 	is_removed boolean DEFAULT false,
 	created_at timestamp with time zone NOT NULL,
