@@ -1,0 +1,244 @@
+{
+	"PkgName": "models",
+	"Imports": ["github.com/satori/go.uuid", "strings", "github.com/golang/glog"],
+	"Models": [
+		{
+			"Name": "ThreadCounter",
+			"Type": "database",
+			"TableName": "thread_counters",
+			"FactoryCustomCode": [],
+			"Fields": [
+				{
+					"Name": "ClientId",
+					"Type": "uuid.UUID"
+				},
+				{
+					"Name": "ThreadId",
+					"Type": "uuid.UUID"
+				},
+				{
+					"Name": "CounterEvents",
+					"Type": "int64"
+				}
+			]
+		},
+		{
+			"Name": "ThreadWatcher",
+			"Type": "database",
+			"TableName": "thread_watchers",
+			"FactoryCustomCode": [],
+			"Fields": [
+				{
+					"Name": "ClientId",
+					"Type": "uuid.UUID"
+				},
+				{
+					"Name": "ThreadId",
+					"Type": "uuid.UUID"
+				},
+				{
+					"Name": "UserId",
+					"Type": "uuid.UUID"
+				},
+				{
+					"Name": "Unread",
+					"Type": "int64"
+				}
+			]
+		},
+		{
+			"Name": "Threadline",
+			"Type": "database",
+			"TableName": "threadline",
+			"Implements": ["ModelAbstract"],
+			"FactoryCustomCode": [],
+			"Fields": [
+				{
+					"Name": "ClientId",
+					"Type": "uuid.UUID"
+				},
+				{
+					"Name": "ChannelId",
+					"Type": "uuid.UUID"
+				},
+				{
+					"Name": "ThreadId",
+					"Type": "uuid.UUID"
+				},
+
+
+				{
+					"Name": "EventId",
+					"Type": "uuid.UUID",
+					"IsPrimaryKey": true
+				}
+			]
+		},
+		{
+			"Name": "Thread",
+			"Type": "database",
+			"TableName": "threads",
+			"Implements": ["ModelAbstract"],
+			"FactoryCustomCode": [
+				"model.ExtProps = NewStringMap()"
+			],
+			"Fields": [
+				{
+					"Name": "ThreadId",
+					"Type": "uuid.UUID",
+					"IsPrimaryKey": true
+				},
+				{
+					"Name": "ClientId",
+					"Type": "uuid.UUID"
+				},
+				{
+					"Name": "ChannelId",
+					"Type": "uuid.UUID"
+				},
+
+				{
+					"Name": "ExtId",
+					"Type": "string"
+				},
+				{
+					"Name": "ExtIdHash",
+					"Type": "string"
+				},
+				{
+					"Name": "ExtProps",
+					"Type": "StringMap"
+				},
+				{
+					"Name": "ExtFlags",
+					"Type": "[]string"
+				},
+				{
+					"Name": "Depth",
+					"Type": "int64"
+				},
+				{
+					"Name": "Owners",
+					"Type": "UUIDArray"
+				},
+				{
+					"Name": "RelatedEventId",
+					"Type": "uuid.UUID"
+				},
+				{
+					"Name": "ParentThreadId",
+					"Type": "uuid.UUID"
+				}
+			],
+			"Transformer": {
+				"From": [
+					{
+						"Name": "ThreadDTO",
+						"Map": {
+							"ExtId": "ExtId",
+							"ExtProps": "ExtProps",
+							"ExtFlags": "ExtFlags"
+						},
+						"Custom": [
+							"model.ParentThreadId = uuid.FromStringOrNil(dto.ParentThreadId)",
+							"model.RelatedEventId = uuid.FromStringOrNil(dto.RelatedEventId)",
+							"model.ClientId = uuid.FromStringOrNil(dto.ClientId)",
+							"model.ChannelId = uuid.FromStringOrNil(dto.ChannelId)",
+							"model.ExtIdHash = HashText(dto.ExtId)",
+							"model.Depth = int64(len(strings.Split(dto.ExtId, \":\")))",
+							"model.Owners.FromArray(dto.Owners)"
+						]
+					}
+				]
+			}
+		},
+		{
+			"Name": "ThreadDTO",
+			"Type": "dto",
+			"Implements": ["DTOAbstract"],
+			"FactoryCustomCode": [
+				"model.ExtProps = NewStringMap()"
+			],
+			"Fields": [
+				{
+					"Name": "ClientId",
+					"Type": "string",
+					"Tags": {
+						"json": "-",
+						"v": "required"
+					}
+				},
+				{
+					"Name": "ChannelId",
+					"Type": "string",
+					"Tags": {
+						"json": "-",
+						"v": "required"
+					}
+				},
+				{
+					"Name": "ExtId",
+					"Type": "string",
+					"Tags": {
+						"v": "required"
+					}
+				},
+				{
+					"Name": "ExtProps",
+					"Type": "StringMap"
+				},
+				{
+					"Name": "ExtFlags",
+					"Type": "StringArray"
+				},
+				{
+					"Name": "Owners",
+					"Type": "StringArray",
+					"Tags": {
+						"v": "gt=1"
+					}
+				},
+				{
+					"Name": "EventCreator",
+					"Type": "string",
+					"Tags": {
+						"json": "-"
+					}
+				},
+				{
+					"Name": "CreatedEventId",
+					"Type": "string",
+					"Tags": {
+						"json": "-"
+					}
+				},
+				{
+					"Comment": "Связанная с текущим событием событие из потока ParentThreadId",
+					"Name": "RelatedEventId",
+					"Type": "string"	
+				},
+				{
+					"Name": "ParentThreadId",
+					"Type": "string"	
+				}
+			],
+			"Transformer": {
+				"From": [
+					{
+						"Name": "Channel",
+						"Map": {
+							"ClientId": "ClientId.String()",
+							"ChannelId": "ChannelId.String()",
+							"ExtId": "ExtId",
+							"ExtProps": "ExtProps",
+							"ExtFlags": "ExtFlags"
+						},
+						"Custom": [
+							"model.Owners.FromArray(dto.Owners)"
+						]
+					}
+				]
+			}
+		}
+	]
+}

@@ -6,5 +6,10 @@ func InitApi() {
 	// Demo
 	InitEmpty(r)
 
+	// Oauth
 	InitOAuth2(r)
+
+	// Components
+	InitUsers(r)
+	InitEvents(r)
 }

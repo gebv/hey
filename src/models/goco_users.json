@@ -1,0 +1,89 @@
+{
+	"PkgName": "models",
+	"Imports": ["github.com/golang/glog", "github.com/satori/go.uuid"],
+	"Models": [
+		{
+			"Name": "User",
+			"Type": "database",
+			"TableName": "users",
+			"Implements": ["ModelAbstract"],
+			"FactoryCustomCode": [],
+			"Fields": [
+				{
+					"Name": "UserId",
+					"Type": "uuid.UUID",
+					"IsPrimaryKey": true
+				},
+				{
+					"Name": "ClientId",
+					"Type": "uuid.UUID"
+				},
+				{
+					"Name": "ExtId",
+					"Type": "string"
+				},
+				{
+					"Name": "ExtIdHash",
+					"Type": "string"
+				},
+				{
+					"Name": "ExtProps",
+					"Type": "StringMap"
+				},
+				{
+					"Name": "IsEnabled",
+					"Type": "bool"
+				}
+			],
+			"Transformer": {
+				"From": [
+					{
+						"Name": "UserDTO",
+						"Map": {
+							"ExtId": "ExtId",
+							"ExtProps": "ExtProps",
+							"IsEnabled": "IsEnabled"
+						},
+						"Custom": [
+							"model.ClientId = uuid.FromStringOrNil(dto.ClientId)",
+							"model.ExtIdHash = HashText(dto.ExtId)"
+						]
+					}
+				]
+			}
+		},
+		{
+			"Name": "UserDTO",
+			"Type": "dto",
+			"Implements": ["DTOAbstract"],
+			"Fields": [
+				{
+					"Name": "ClientId",
+					"Type": "string",
+					"Tags": {
+						"json": "-",
+						"v": "required"
+					}
+				},
+				{
+					"Name": "ExtId",
+					"Type": "string",
+					"Tags": {
+						"v": "required"
+					}
+				},
+				{
+					"Name": "ExtProps",
+					"Type": "StringMap"
+				},
+				{
+					"Name": "IsEnabled",
+					"Type": "bool"
+				}
+			],
+			"Transformer": {
+				"From": []
+			}
+		}
+	]
+}

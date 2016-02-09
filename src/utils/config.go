@@ -12,6 +12,7 @@ var Cfg *models.Config = &models.Config{}
 var BuildDate string = ""
 var Version string = ""
 var GitHash string = ""
+var IsTesting bool
 
 const (
 	MODE_PROD = "prod"
@@ -55,7 +56,7 @@ func FindDir(dir string) string {
 }
 
 func LoadConfig(fileName string) {
-	if len(BuildDate) == 0 || len(GitHash) == 0 || len(Version) == 0 {
+	if (len(BuildDate) == 0 || len(GitHash) == 0 || len(Version) == 0) && !IsTesting {
 		panic("empty BuildDate OR GitHash OR Version")
 	}
 

@@ -1,7 +1,20 @@
 {
 	"PkgName": "models",
-	"Imports": ["time", "github.com/lib/pq", "github.com/golang/glog"],
+	"Imports": ["github.com/jackc/pgx", "time", "github.com/golang/glog"],
 	"Models": [
+		{
+			"Name": "DTOAbstract",
+			"Type": "dto",
+			"Fields": [
+				{
+					"Name": "Tx",
+					"Type": "*pgx.Tx",
+					"Tags": {
+						"json": "-"
+					}
+				}
+			]
+		},
 		{
 			"Name": "ModelAbstract",
 			"Type": "dto",
@@ -15,22 +28,15 @@
 				},
 
 				{
-					"Name": "AtCreated",
+					"Name": "CreatedAt",
 					"Type": "time.Time",
 					"Tags": {
 						"sql": "type:timestamp;default:null"
 					}
 				},
 				{
-					"Name": "AtUpdated",
+					"Name": "UpdatedAt",
 					"Type": "time.Time",
-					"Tags": {
-						"sql": "type:timestamp;default:null"
-					}
-				},
-				{
-					"Name": "AtRemoved",
-					"Type": "pq.NullTime",
 					"Tags": {
 						"sql": "type:timestamp;default:null"
 					}

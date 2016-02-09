@@ -47,7 +47,7 @@ func (model *Session) TransformFrom(in interface{}) error {
 // Helpful functions
 //
 
-func (s Session) Maps() map[string]interface{} {
+func (s *Session) Maps() map[string]interface{} {
 	return map[string]interface{}{
 		// Id
 		"id": &s.Id,
@@ -61,7 +61,7 @@ func (s Session) Maps() map[string]interface{} {
 }
 
 // Fields extract of fields from map
-func (s Session) Fields(fields ...string) ([]string, []interface{}) {
+func (s *Session) Fields(fields ...string) ([]string, []interface{}) {
 	return ExtractFieldsFromMap(s.Maps(), fields...)
 }
 

@@ -11,6 +11,7 @@ var EmptyLicenses models.StringArray
 func NewContext() *Context {
 	_model := &Context{}
 	_model.Context = models.NewContext()
+	_model.Session = NewSession()
 
 	return _model
 }

@@ -5,6 +5,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"github.com/golang/glog"
 )
 
 func SqlSelect(tableName string, fields []string) string {
@@ -46,19 +47,21 @@ func FormateToPG(query string, fields []string) string {
 	})
 }
 
-func FormatSql(_type string, tableName string, arraysField []string) string {
+func FormatSql(_type string, tableName string, arraysField []string) (sql string) {
 	switch _type {
 	case "s":
-		return fmt.Sprintf("SELECT %s FROM %s", strings.Join(arraysField, ", "), tableName)
+		sql = fmt.Sprintf("SELECT %s FROM %s", strings.Join(arraysField, ", "), tableName)
 	case "i":
-		return fmt.Sprintf("INSERT INTO %s(%s) VALUES(%s)", tableName, strings.Join(arraysField, ", "), strings.Repeat("?,", len(arraysField))[:len(arraysField)*2-1])
+		sql = fmt.Sprintf("INSERT INTO %s(%s) VALUES(%s)", tableName, strings.Join(arraysField, ", "), strings.Repeat("?,", len(arraysField))[:len(arraysField)*2-1])
 	case "u":
 		setFields := []string{}
 		for _, fieldName := range arraysField {
 			setFields = append(setFields, fmt.Sprintf("%s = ?", fieldName))
 		}
-		return fmt.Sprintf("UPDATE %s SET %s", tableName, strings.Join(setFields, ", "))
+		sql = fmt.Sprintf("UPDATE %s SET %s", tableName, strings.Join(setFields, ", "))
 	default:
-		return ""
+		glog.Warningf("format sql: not supported type '%s'", _type)
 	}
+
+	return sql
 }

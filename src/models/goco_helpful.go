@@ -3,9 +3,60 @@ package models
 
 import (
 	"github.com/golang/glog"
-	"github.com/lib/pq"
+	"github.com/jackc/pgx"
 	"time"
 )
+
+// DTOAbstract
+func NewDTOAbstract() *DTOAbstract {
+	model := new(DTOAbstract)
+	return model
+}
+
+type DTOAbstract struct {
+	// Tx
+	Tx *pgx.Tx `json:"-" `
+}
+
+func (model DTOAbstract) TransformTo(out interface{}) error {
+	switch out.(type) {
+	default:
+		glog.Errorf("Not supported type %v", out)
+		return ErrNotSupported
+	}
+	return nil
+}
+
+func (model *DTOAbstract) TransformFrom(in interface{}) error {
+	switch in.(type) {
+	default:
+		glog.Errorf("Not supported type %v", in)
+		return ErrNotSupported
+	}
+	return nil
+
+}
+
+//
+// Helpful functions
+//
+
+func (d *DTOAbstract) Maps() map[string]interface{} {
+	return map[string]interface{}{
+		// Tx
+		"tx": &d.Tx,
+	}
+}
+
+// Fields extract of fields from map
+func (d *DTOAbstract) Fields(fields ...string) ([]string, []interface{}) {
+	return ExtractFieldsFromMap(d.Maps(), fields...)
+}
+
+// FromJson data as []byte or io.Reader
+func (d *DTOAbstract) FromJson(data interface{}) error {
+	return FromJson(d, data)
+}
 
 // ModelAbstract
 func NewModelAbstract() *ModelAbstract {
@@ -16,12 +67,10 @@ func NewModelAbstract() *ModelAbstract {
 type ModelAbstract struct {
 	// IsRemoved
 	IsRemoved bool `json:"is_removed" sql:"type:boolean;default:false" `
-	// AtCreated
-	AtCreated time.Time `json:"at_created" sql:"type:timestamp;default:null" `
-	// AtUpdated
-	AtUpdated time.Time `json:"at_updated" sql:"type:timestamp;default:null" `
-	// AtRemoved
-	AtRemoved pq.NullTime `json:"at_removed" sql:"type:timestamp;default:null" `
+	// CreatedAt
+	CreatedAt time.Time `json:"created_at" sql:"type:timestamp;default:null" `
+	// UpdatedAt
+	UpdatedAt time.Time `json:"updated_at" sql:"type:timestamp;default:null" `
 }
 
 func (model ModelAbstract) TransformTo(out interface{}) error {
@@ -47,21 +96,19 @@ func (model *ModelAbstract) TransformFrom(in interface{}) error {
 // Helpful functions
 //
 
-func (m ModelAbstract) Maps() map[string]interface{} {
+func (m *ModelAbstract) Maps() map[string]interface{} {
 	return map[string]interface{}{
 		// IsRemoved
 		"is_removed": &m.IsRemoved,
-		// AtCreated
-		"at_created": &m.AtCreated,
-		// AtUpdated
-		"at_updated": &m.AtUpdated,
-		// AtRemoved
-		"at_removed": &m.AtRemoved,
+		// CreatedAt
+		"created_at": &m.CreatedAt,
+		// UpdatedAt
+		"updated_at": &m.UpdatedAt,
 	}
 }
 
 // Fields extract of fields from map
-func (m ModelAbstract) Fields(fields ...string) ([]string, []interface{}) {
+func (m *ModelAbstract) Fields(fields ...string) ([]string, []interface{}) {
 	return ExtractFieldsFromMap(m.Maps(), fields...)
 }
 
@@ -110,7 +157,7 @@ func (model *Trace) TransformFrom(in interface{}) error {
 // Helpful functions
 //
 
-func (t Trace) Maps() map[string]interface{} {
+func (t *Trace) Maps() map[string]interface{} {
 	return map[string]interface{}{
 		// RequestId
 		"request_id": &t.RequestId,
@@ -124,7 +171,7 @@ func (t Trace) Maps() map[string]interface{} {
 }
 
 // Fields extract of fields from map
-func (t Trace) Fields(fields ...string) ([]string, []interface{}) {
+func (t *Trace) Fields(fields ...string) ([]string, []interface{}) {
 	return ExtractFieldsFromMap(t.Maps(), fields...)
 }
 
@@ -173,7 +220,7 @@ func (model *AppError) TransformFrom(in interface{}) error {
 // Helpful functions
 //
 
-func (a AppError) Maps() map[string]interface{} {
+func (a *AppError) Maps() map[string]interface{} {
 	return map[string]interface{}{
 		// Message
 		"message": &a.Message,
@@ -187,7 +234,7 @@ func (a AppError) Maps() map[string]interface{} {
 }
 
 // Fields extract of fields from map
-func (a AppError) Fields(fields ...string) ([]string, []interface{}) {
+func (a *AppError) Fields(fields ...string) ([]string, []interface{}) {
 	return ExtractFieldsFromMap(a.Maps(), fields...)
 }
 
@@ -228,9 +275,9 @@ func (model *ResponseDTO) TransformFrom(in interface{}) error {
 	switch in.(type) {
 	case *AppError:
 		dto := in.(*AppError)
+		model.DevMessage = dto.DevMessage
 		model.StatusCode = dto.StatusCode
 		model.Message = dto.Message
-		model.DevMessage = dto.DevMessage
 	default:
 		glog.Errorf("Not supported type %v", in)
 		return ErrNotSupported
@@ -243,7 +290,7 @@ func (model *ResponseDTO) TransformFrom(in interface{}) error {
 // Helpful functions
 //
 
-func (r ResponseDTO) Maps() map[string]interface{} {
+func (r *ResponseDTO) Maps() map[string]interface{} {
 	return map[string]interface{}{
 		// StatusCode
 		"status_code": &r.StatusCode,
@@ -257,7 +304,7 @@ func (r ResponseDTO) Maps() map[string]interface{} {
 }
 
 // Fields extract of fields from map
-func (r ResponseDTO) Fields(fields ...string) ([]string, []interface{}) {
+func (r *ResponseDTO) Fields(fields ...string) ([]string, []interface{}) {
 	return ExtractFieldsFromMap(r.Maps(), fields...)
 }
 

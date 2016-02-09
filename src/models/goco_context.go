@@ -43,7 +43,7 @@ func (model *Context) TransformFrom(in interface{}) error {
 // Helpful functions
 //
 
-func (c Context) Maps() map[string]interface{} {
+func (c *Context) Maps() map[string]interface{} {
 	return map[string]interface{}{
 		// T	Информация о текущем действии
 		"t": &c.T,
@@ -53,7 +53,7 @@ func (c Context) Maps() map[string]interface{} {
 }
 
 // Fields extract of fields from map
-func (c Context) Fields(fields ...string) ([]string, []interface{}) {
+func (c *Context) Fields(fields ...string) ([]string, []interface{}) {
 	return ExtractFieldsFromMap(c.Maps(), fields...)
 }
 

@@ -2,30 +2,103 @@ package models
 
 import (
 	"bytes"
-	"crypto/rand"
-	"encoding/json"
-	"fmt"
 	"io"
 	"strings"
+
+    "crypto/sha1"
+    "encoding/hex"
+
+    "database/sql/driver"
+    // "github.com/jackc/pgx"
+    "encoding/json"
+
+    "github.com/satori/go.uuid"
+    "github.com/golang/glog"
 )
 
-type UUID [16]byte
-
-// create a new uuid v4
-func NewUUID() *UUID {
-	u := &UUID{}
-	_, err := rand.Read(u[:16])
-	if err != nil {
-		panic(err)
-	}
-
-	u[8] = (u[8] | 0x80) & 0xBf
-	u[6] = (u[6] | 0x40) & 0x4f
-	return u
+func HashText(text string) string {
+    hasher := sha1.New()
+    hasher.Write([]byte(text))
+    return hex.EncodeToString(hasher.Sum(nil))
 }
 
-func (u *UUID) String() string {
-	return fmt.Sprintf("%x-%x-%x-%x-%x", u[:4], u[4:6], u[6:8], u[8:10], u[10:])
+type UUIDArray []uuid.UUID
+
+func (m *UUIDArray) Scan(value interface{}) error {
+	_value := value.([]byte)
+	_value = _value[1:len(_value)-1]
+
+	m.FromArray(strings.Split(string(_value), ","))
+	
+    return nil
+}
+
+func (m UUIDArray) Value() (driver.Value, error) {
+	if len(m) == 0 {
+		return string("{}"), nil
+	}
+	
+    b, err := json.Marshal(m)
+    if err != nil {
+        return string("{}"), err
+    }
+
+    return "{"+string(b)[1:len(b)-1]+"}", nil
+}
+
+func (c *UUIDArray) FromArray(v interface{}) *UUIDArray {
+	switch v.(type) {
+	case []uuid.UUID:
+		for _, _v := range v.([]uuid.UUID) {
+			c.Add(_v)
+		}
+	case []string:
+		for _, _v := range v.([]string) {
+			c.Add(_v)
+		}
+	case StringArray:
+		for _, _v := range []string(v.(StringArray)) {
+			c.Add(_v)
+		}
+	default:
+		glog.Warningf("Not supported type %T", v)
+	}
+
+	return c
+}
+
+
+func (c *UUIDArray) IsExist(v uuid.UUID) bool {
+	for _, value := range *c {
+
+		if bytes.Equal(v.Bytes(), value.Bytes()) {
+
+			return true
+		}
+	}
+
+	return false
+}
+
+func (c *UUIDArray) Add(v interface{}) *UUIDArray {
+	switch v.(type) {
+	case uuid.UUID:
+		if c.IsExist(v.(uuid.UUID)) {
+			return c
+		}
+
+		*c = append(*c, v.(uuid.UUID))
+	case string:
+		if c.IsExist(uuid.FromStringOrNil(v.(string))) {
+			return c
+		}
+
+		*c = append(*c, uuid.FromStringOrNil(v.(string)))
+	default:
+		glog.Warningf("Not supported type %T", v)
+	}
+
+	return c
 }
 
 type StringMap map[string]string
@@ -34,7 +107,51 @@ func NewStringMap() map[string]string {
 	return make(map[string]string)
 }
 
+func (m *StringMap) Scan(value interface{}) error {
+    return json.Unmarshal(value.([]byte), m)
+}
+
+func (m StringMap) Value() (driver.Value, error) {
+	if len(m) == 0 {
+		return string("{}"), nil
+	}
+	
+    b, err := json.Marshal(m)
+    if err != nil {
+        return string("{}"), err
+    }
+    return string(b), nil
+}
+
+
+type StringArrayHelper *StringArray
+
 type StringArray []string
+
+func (c *StringArray) FromArray(v interface{}) *StringArray {
+	switch v.(type) {
+	case []uuid.UUID:
+		for _, _v := range v.([]uuid.UUID) {
+			c.Add(_v.String())
+		}
+	case UUIDArray:
+		for _, _v := range []uuid.UUID(v.(UUIDArray)) {
+			c.Add(_v.String())
+		}
+	case []string:
+		for _, _v := range v.([]string) {
+			c.Add(_v)
+		}
+	case StringArray:
+		for _, _v := range []string(v.(StringArray)) {
+			c.Add(_v)
+		}
+	default:
+		glog.Warningf("Not supported type %T", v)
+	}
+
+	return c
+}
 
 func (c *StringArray) AddAsArray(in []string) {
 	for _, str := range in {

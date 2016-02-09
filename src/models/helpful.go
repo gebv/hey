@@ -3,6 +3,7 @@ package models
 import (
 	"encoding/json"
 	"github.com/golang/glog"
+	"github.com/satori/go.uuid"
 	"time"
 )
 
@@ -27,21 +28,19 @@ type ModelAbstractInterface interface {
 	BeforeDelete()
 
 	PrimaryName() string
-	PrimaryValue() string
+	PrimaryValue() uuid.UUID
 	TableName() string
 }
 
 func (c *ModelAbstract) BeforeCreate() {
-	c.AtCreated = time.Now()
+	c.CreatedAt = time.Now()
 }
 
 func (c *ModelAbstract) BeforeSave() {
-	c.AtUpdated = time.Now()
+	c.UpdatedAt = time.Now()
 }
 
 func (c *ModelAbstract) BeforeDelete() {
-	c.AtRemoved.Time = time.Now()
-	c.AtRemoved.Valid = true
 	c.IsRemoved = true
 }
 

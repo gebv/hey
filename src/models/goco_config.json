@@ -14,10 +14,17 @@
 					}
 				},
 				{
-					"Name": "StorageSettings",
+					"Name": "StorageAppSettings",
 					"Type": "StorageSettings",
 					"Tags": {
-						"json": "StorageSettings"
+						"json": "StorageAppSettings"
+					}
+				},
+				{
+					"Name": "StorageAccessSettings",
+					"Type": "StorageSettings",
+					"Tags": {
+						"json": "StorageAccessSettings"
 					}
 				}
 			]

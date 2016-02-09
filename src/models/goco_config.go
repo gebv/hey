@@ -15,8 +15,10 @@ func NewConfig() *Config {
 type Config struct {
 	// ServiceSettings
 	ServiceSettings ServiceSettings `json:"ServiceSettings" `
-	// StorageSettings
-	StorageSettings StorageSettings `json:"StorageSettings" `
+	// StorageAppSettings
+	StorageAppSettings StorageSettings `json:"StorageAppSettings" `
+	// StorageAccessSettings
+	StorageAccessSettings StorageSettings `json:"StorageAccessSettings" `
 }
 
 func (model Config) TransformTo(out interface{}) error {
@@ -42,17 +44,19 @@ func (model *Config) TransformFrom(in interface{}) error {
 // Helpful functions
 //
 
-func (c Config) Maps() map[string]interface{} {
+func (c *Config) Maps() map[string]interface{} {
 	return map[string]interface{}{
 		// ServiceSettings
 		"service_settings": &c.ServiceSettings,
-		// StorageSettings
-		"storage_settings": &c.StorageSettings,
+		// StorageAppSettings
+		"storage_app_settings": &c.StorageAppSettings,
+		// StorageAccessSettings
+		"storage_access_settings": &c.StorageAccessSettings,
 	}
 }
 
 // Fields extract of fields from map
-func (c Config) Fields(fields ...string) ([]string, []interface{}) {
+func (c *Config) Fields(fields ...string) ([]string, []interface{}) {
 	return ExtractFieldsFromMap(c.Maps(), fields...)
 }
 
@@ -99,7 +103,7 @@ func (model *ServiceSettings) TransformFrom(in interface{}) error {
 // Helpful functions
 //
 
-func (s ServiceSettings) Maps() map[string]interface{} {
+func (s *ServiceSettings) Maps() map[string]interface{} {
 	return map[string]interface{}{
 		// ListenAddress
 		"listen_address": &s.ListenAddress,
@@ -111,7 +115,7 @@ func (s ServiceSettings) Maps() map[string]interface{} {
 }
 
 // Fields extract of fields from map
-func (s ServiceSettings) Fields(fields ...string) ([]string, []interface{}) {
+func (s *ServiceSettings) Fields(fields ...string) ([]string, []interface{}) {
 	return ExtractFieldsFromMap(s.Maps(), fields...)
 }
 
@@ -164,7 +168,7 @@ func (model *StorageSettings) TransformFrom(in interface{}) error {
 // Helpful functions
 //
 
-func (s StorageSettings) Maps() map[string]interface{} {
+func (s *StorageSettings) Maps() map[string]interface{} {
 	return map[string]interface{}{
 		// Network
 		"network": &s.Network,
@@ -182,7 +186,7 @@ func (s StorageSettings) Maps() map[string]interface{} {
 }
 
 // Fields extract of fields from map
-func (s StorageSettings) Fields(fields ...string) ([]string, []interface{}) {
+func (s *StorageSettings) Fields(fields ...string) ([]string, []interface{}) {
 	return ExtractFieldsFromMap(s.Maps(), fields...)
 }
 

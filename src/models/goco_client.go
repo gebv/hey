@@ -3,6 +3,7 @@ package models
 
 import (
 	"github.com/golang/glog"
+	"github.com/satori/go.uuid"
 )
 
 // Client
@@ -13,26 +14,24 @@ func NewClient() *Client {
 
 type Client struct {
 	ModelAbstract
-	// ClientId
-	ClientId string `json:"client_id" `
+	// Id
+	Id uuid.UUID `json:"id" `
 	// Domain
 	Domain string `json:"domain" `
-	// IPv4
-	IPv4 string `json:"i_pv" `
-	// IPv6
-	IPv6 string `json:"i_pv" `
-	// Licenses
-	Licenses StringArray `json:"licenses" `
+	// Ips
+	Ips []string `json:"ips" `
 	// Secret
 	Secret string `json:"secret" `
-	// Redirect
-	Redirect string `json:"redirect" `
+	// RedirectUri
+	RedirectUri string `json:"redirect_uri" `
 	// Scopes
-	Scopes StringArray `json:"scopes" `
+	Scopes []string `json:"scopes" `
 	// Flags
-	Flags StringArray `json:"flags" `
-	// ClientProps
-	ClientProps ClientProps `json:"client_props" `
+	Flags []string `json:"flags" `
+	// Props
+	Props ClientProps `json:"props" `
+	// IsEnabled
+	IsEnabled bool `json:"is_enabled" `
 }
 
 func (model Client) TransformTo(out interface{}) error {
@@ -58,33 +57,31 @@ func (model *Client) TransformFrom(in interface{}) error {
 // Helpful functions
 //
 
-func (c Client) Maps() map[string]interface{} {
+func (c *Client) Maps() map[string]interface{} {
 	maps := c.ModelAbstract.Maps()
-	// ClientId
-	maps["client_id"] = &c.ClientId
+	// Id
+	maps["id"] = &c.Id
 	// Domain
 	maps["domain"] = &c.Domain
-	// IPv4
-	maps["i_pv"] = &c.IPv4
-	// IPv6
-	maps["i_pv"] = &c.IPv6
-	// Licenses
-	maps["licenses"] = &c.Licenses
+	// Ips
+	maps["ips"] = &c.Ips
 	// Secret
 	maps["secret"] = &c.Secret
-	// Redirect
-	maps["redirect"] = &c.Redirect
+	// RedirectUri
+	maps["redirect_uri"] = &c.RedirectUri
 	// Scopes
 	maps["scopes"] = &c.Scopes
 	// Flags
 	maps["flags"] = &c.Flags
-	// ClientProps
-	maps["client_props"] = &c.ClientProps
+	// Props
+	maps["props"] = &c.Props
+	// IsEnabled
+	maps["is_enabled"] = &c.IsEnabled
 	return maps
 }
 
 // Fields extract of fields from map
-func (c Client) Fields(fields ...string) ([]string, []interface{}) {
+func (c *Client) Fields(fields ...string) ([]string, []interface{}) {
 	return ExtractFieldsFromMap(c.Maps(), fields...)
 }
 
@@ -94,17 +91,17 @@ func (c *Client) FromJson(data interface{}) error {
 }
 
 func (Client) TableName() string {
-	return "clients"
+	return "client"
 }
 
 // PrimaryName primary field name
 func (Client) PrimaryName() string {
-	return "client_id"
+	return "id"
 }
 
 // PrimaryValue primary value
-func (c Client) PrimaryValue() string {
-	return c.ClientId
+func (c Client) PrimaryValue() uuid.UUID {
+	return c.Id
 }
 
 // model
@@ -144,7 +141,7 @@ func (model *ClientProps) TransformFrom(in interface{}) error {
 // Helpful functions
 //
 
-func (c ClientProps) Maps() map[string]interface{} {
+func (c *ClientProps) Maps() map[string]interface{} {
 	return map[string]interface{}{
 		// FullName
 		"full_name": &c.FullName,
@@ -154,7 +151,7 @@ func (c ClientProps) Maps() map[string]interface{} {
 }
 
 // Fields extract of fields from map
-func (c ClientProps) Fields(fields ...string) ([]string, []interface{}) {
+func (c *ClientProps) Fields(fields ...string) ([]string, []interface{}) {
 	return ExtractFieldsFromMap(c.Maps(), fields...)
 }
 
