@@ -124,7 +124,7 @@ func extractPGXStorageConfig(c models.StorageSettings) pgx.ConnConfig {
 	config.Password = c.Password
 	config.Database = c.Database
 	config.Logger = databaseLogger{}
-	config.LogLevel = pgx.LogLevelDebug
+	config.LogLevel = pgx.LogLevelError
 
 	return config
 }

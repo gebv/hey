@@ -49,6 +49,9 @@ CREATE TABLE IF NOT EXISTS users (
 	CONSTRAINT uniq_client_user_idx UNIQUE (client_id, ext_id_hash)
 );
 
+INSERT INTO users(user_id, client_id, ext_id, ext_id_hash, is_enabled, created_at) VALUES
+	('193b7a9c-42ad-456e-8886-aa6ae8ebcf17', 'b4c8dd5b-852c-460a-9b4a-26109f9162a2', 'demo', '89e495e7941cf9e40e6980d14a16bf023ccd4c91', true, now());
+
 CREATE TABLE IF NOT EXISTS channels (
 	channel_id uuid PRIMARY KEY,
 	client_id uuid,

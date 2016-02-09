@@ -1,0 +1,23 @@
+
+language: go
+
+go:
+  - 1.5.2
+  - tip
+
+addons:
+  postgresql: "9.4"
+
+services:
+  - postgresql
+
+install: make vendor_get
+
+before_script:
+  - psql -c 'create database hey;' -U postgres
+  - psql -U postgres -f schema/v0.1.sql
+  - cp config/config.json.travis config/config.json
+  - 
+
+script:
+  - make test

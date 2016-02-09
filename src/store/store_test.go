@@ -16,8 +16,8 @@ var _conn *pgx.Conn
 func init() {
 
 	// flag.Parse()
-	flag.Set("v", "2")
-	flag.Set("stderrthreshold", "INFO")
+	flag.Set("v", "1")
+	flag.Set("stderrthreshold", "ERROR")
 
 	utils.IsTesting = true
 	utils.LoadConfig("../../config/config.json")
