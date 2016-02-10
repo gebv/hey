@@ -103,7 +103,7 @@ func TestThreadline(t *testing.T) {
 	t.Log("ThreadExtId = "+channel.ExtId + ":100events")
 }
 
-func zzzTestCreateEvent(t *testing.T) {
+func TestCreateEvent(t *testing.T) {
 	// Создать канал и создать событие в канал на уровень выше
 
 	channel := createChannel(t)
