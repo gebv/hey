@@ -6,7 +6,7 @@ import (
 	"github.com/satori/go.uuid"
 )
 
-func TestCreateChannel(t *testing.T) {
+func zzzTestCreateChannel(t *testing.T) {
 	channel := createChannel(t)
 
 	// Проверка созданного канала
@@ -187,7 +187,7 @@ func TestCreateChannel(t *testing.T) {
 }
 
 
-func TestFindAllThreadsFromPathAndCreateLast(t *testing.T) {
+func zzzTestFindAllThreadsFromPathAndCreateLast(t *testing.T) {
 	channel := createChannel(t)
 
 	tx, _ := _s.db.Begin()

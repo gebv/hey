@@ -8,6 +8,69 @@ import (
 	"strings"
 )
 
+// EventLoadResult
+func NewEventLoadResult() *EventLoadResult {
+	model := new(EventLoadResult)
+	return model
+}
+
+type EventLoadResult struct {
+	// Events
+	Events []*Event `json:"events" `
+	// HasNext
+	HasNext bool `json:"has_next" `
+	// ThreadTotalCount
+	ThreadTotalCount string `json:"thread_total_count" `
+	// Cursor
+	Cursor string `json:"cursor" `
+}
+
+func (model EventLoadResult) TransformTo(out interface{}) error {
+	switch out.(type) {
+	default:
+		glog.Errorf("Not supported type %v", out)
+		return ErrNotSupported
+	}
+	return nil
+}
+
+func (model *EventLoadResult) TransformFrom(in interface{}) error {
+	switch in.(type) {
+	default:
+		glog.Errorf("Not supported type %v", in)
+		return ErrNotSupported
+	}
+	return nil
+
+}
+
+//
+// Helpful functions
+//
+
+func (e *EventLoadResult) Maps() map[string]interface{} {
+	return map[string]interface{}{
+		// Events
+		"events": &e.Events,
+		// HasNext
+		"has_next": &e.HasNext,
+		// ThreadTotalCount
+		"thread_total_count": &e.ThreadTotalCount,
+		// Cursor
+		"cursor": &e.Cursor,
+	}
+}
+
+// Fields extract of fields from map
+func (e *EventLoadResult) Fields(fields ...string) ([]string, []interface{}) {
+	return ExtractFieldsFromMap(e.Maps(), fields...)
+}
+
+// FromJson data as []byte or io.Reader
+func (e *EventLoadResult) FromJson(data interface{}) error {
+	return FromJson(e, data)
+}
+
 // EventDTO
 func NewEventDTO() *EventDTO {
 	model := new(EventDTO)

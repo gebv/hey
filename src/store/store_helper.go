@@ -11,17 +11,19 @@ func FindModel(model models.ModelAbstractInterface, db *pgx.Conn, tx *pgx.Tx, fi
 	fieldNames, fieldValues := model.Fields(fields...)
 
 	query := SqlSelect(model.TableName(), fieldNames)
-	query = FormateToPG(query, fieldNames)
+	
 
 	where := fmt.Sprintf(" WHERE %s = ?", model.PrimaryName())
+
+	query = FormateToPQuery(query+where)
 	args := []interface{}{model.PrimaryValue()}
 
 	var err error
 
 	if tx != nil {
-		err = tx.QueryRow(query+where, args...).Scan(fieldValues...)
+		err = tx.QueryRow(query, args...).Scan(fieldValues...)
 	} else {
-		err = db.QueryRow(query+where, args...).Scan(fieldValues...)
+		err = db.QueryRow(query, args...).Scan(fieldValues...)
 	}
 
 	if err == pgx.ErrNoRows {

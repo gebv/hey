@@ -246,6 +246,42 @@
 					}
 				]
 			}
+		},
+		{
+			"Comment": "",
+			"Name": "LoadThreadlineDTO",
+			"Implements": ["DTOAbstract"],
+			"Type": "dto",
+			"Fields": [
+				{
+					"Name": "ClientId",
+					"Type": "string"
+				},
+				{
+					"Comment": "Имя потока",
+					"Name": "Thread",
+					"Type": "string",
+					"Tags": {
+						"v": "required"
+					}
+				},
+				{
+					"Comment": "От имени кого загружаются события",
+					"Name": "User",
+					"Type": "string",
+					"Tags": {
+						"v": "required"
+					}
+				},
+				{
+					"Name": "Cursor",
+					"Type": "string"
+				},
+				{
+					"Name": "Limit",
+					"Type": "int"
+				}
+			]
 		}
 	]
 }

@@ -21,9 +21,10 @@ func createChannel(t *testing.T) *models.Channel{
 	dto.Tx = tx
 	channel, err := _s.Get("channel").(*ChannelStore).Create(dto)
 
+	defer tx.Rollback()
+
 	if err != nil {
 		t.Error(err)
-		tx.Rollback()
 		return nil
 	} else if err := tx.Commit(); err != nil {
 		t.Error(err)

@@ -388,11 +388,11 @@ func (model *ThreadDTO) TransformFrom(in interface{}) error {
 	switch in.(type) {
 	case *Channel:
 		dto := in.(*Channel)
+		model.ExtId = dto.ExtId
+		model.ExtProps = dto.ExtProps
 		model.ExtFlags = dto.ExtFlags
 		model.ClientId = dto.ClientId.String()
 		model.ChannelId = dto.ChannelId.String()
-		model.ExtId = dto.ExtId
-		model.ExtProps = dto.ExtProps
 		model.Owners.FromArray(dto.Owners)
 	default:
 		glog.Errorf("Not supported type %v", in)
@@ -439,4 +439,72 @@ func (t *ThreadDTO) Fields(fields ...string) ([]string, []interface{}) {
 // FromJson data as []byte or io.Reader
 func (t *ThreadDTO) FromJson(data interface{}) error {
 	return FromJson(t, data)
+}
+
+// LoadThreadlineDTO
+func NewLoadThreadlineDTO() *LoadThreadlineDTO {
+	model := new(LoadThreadlineDTO)
+	return model
+}
+
+type LoadThreadlineDTO struct {
+	DTOAbstract
+	// ClientId
+	ClientId string `json:"client_id" `
+	// Thread	Имя потока
+	Thread string `json:"thread" v:"required" `
+	// User	От имени кого загружаются события
+	User string `json:"user" v:"required" `
+	// Cursor
+	Cursor string `json:"cursor" `
+	// Limit
+	Limit int `json:"limit" `
+}
+
+func (model LoadThreadlineDTO) TransformTo(out interface{}) error {
+	switch out.(type) {
+	default:
+		glog.Errorf("Not supported type %v", out)
+		return ErrNotSupported
+	}
+	return nil
+}
+
+func (model *LoadThreadlineDTO) TransformFrom(in interface{}) error {
+	switch in.(type) {
+	default:
+		glog.Errorf("Not supported type %v", in)
+		return ErrNotSupported
+	}
+	return nil
+
+}
+
+//
+// Helpful functions
+//
+
+func (l *LoadThreadlineDTO) Maps() map[string]interface{} {
+	return map[string]interface{}{
+		// ClientId
+		"client_id": &l.ClientId,
+		// Thread	Имя потока
+		"thread": &l.Thread,
+		// User	От имени кого загружаются события
+		"user": &l.User,
+		// Cursor
+		"cursor": &l.Cursor,
+		// Limit
+		"limit": &l.Limit,
+	}
+}
+
+// Fields extract of fields from map
+func (l *LoadThreadlineDTO) Fields(fields ...string) ([]string, []interface{}) {
+	return ExtractFieldsFromMap(l.Maps(), fields...)
+}
+
+// FromJson data as []byte or io.Reader
+func (l *LoadThreadlineDTO) FromJson(data interface{}) error {
+	return FromJson(l, data)
 }

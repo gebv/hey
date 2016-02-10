@@ -8,13 +8,15 @@ import (
 	"encoding/base64"
 	"time"
 	"strconv"
-	"fmt"
+	"strings"
 )
 
-func zzzTestThreadline(t *testing.T) {
+func TestThreadline(t *testing.T) {
 	channel := createChannel(t)
 
-	for i := 0; i < 10000; i++ {
+	var events = make(map[string]string)
+
+	for i := 0; i < 100; i++ {
 		dto := models.NewEventDTO()
 		dto.ClientId = channel.ClientId.String()
 		dto.Creator = "demo"
@@ -24,19 +26,84 @@ func zzzTestThreadline(t *testing.T) {
 		dto.ExtFlags.Add("schema:default")
 		dto.ExtFlags.Add("iter:"+strconv.Itoa(i))
 
-		_, err := _s.Get("event").(*EventStore).Create(dto)
+		event, err := _s.Get("event").(*EventStore).Create(dto)
 
 		if err != nil {
 			t.Error(err)
 			return
 		}
 
-		time.Sleep(time.Microsecond*10)
+		events[strconv.Itoa(i)] = event.PrimaryValue().String()
+
+		time.Sleep(time.Microsecond*1)
 	}
-	fmt.Println("Thread = "+channel.ExtId + ":100events")
+
+	threadlineLoad := models.NewLoadThreadlineDTO()
+	threadlineLoad.Thread = channel.ExtId + ":100events"
+	threadlineLoad.ClientId = channel.ClientId.String()
+	threadlineLoad.User = "demo"
+	threadlineLoad.Limit = 50
+
+	threadLine, err := _s.Get("event").(*EventStore).LoadThreadline(threadlineLoad)
+
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	if len(threadLine.Events) != 50 {
+		t.Error("threadline count Events per page is not correct")
+		return	
+	}
+
+	if threadLine.HasNext != true {
+		t.Error("threadline HasNext is not correct")
+		return	
+	}
+
+	t.Logf("Cursor %v, %v", threadLine.Cursor, events["50"])
+
+	if strings.Split(threadLine.Cursor, ",")[0] != events["50"] {
+
+		t.Error("threadline Cursor is not correct")
+		return	
+	}
+
+	// Дозагрузка
+
+	threadlineLoad = models.NewLoadThreadlineDTO()
+	threadlineLoad.Thread = channel.ExtId + ":100events"
+	threadlineLoad.ClientId = channel.ClientId.String()
+	threadlineLoad.User = "demo"
+	threadlineLoad.Cursor = threadLine.Cursor
+	threadlineLoad.Limit = 50
+
+	threadLine, err = _s.Get("event").(*EventStore).LoadThreadline(threadlineLoad)
+
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	if len(threadLine.Events) != 50 {
+		t.Error("threadline count Events per page is not correct")
+		return	
+	}
+
+	if threadLine.HasNext != false {
+		t.Error("threadline HasNext is not correct")
+		return	
+	}
+
+	if threadLine.Events[len(threadLine.Events)-1].EventId.String() != events["0"] {
+		t.Error("threadline first EventId is not correct")
+		return
+	}
+
+	t.Log("ThreadExtId = "+channel.ExtId + ":100events")
 }
 
-func TestCreateEvent(t *testing.T) {
+func zzzTestCreateEvent(t *testing.T) {
 	// Создать канал и создать событие в канал на уровень выше
 
 	channel := createChannel(t)

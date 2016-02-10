@@ -3,6 +3,28 @@
 	"Imports": ["strings", "encoding/base64", "github.com/golang/glog", "github.com/satori/go.uuid"],
 	"Models": [
 		{
+			"Name": "EventLoadResult",
+			"Type": "dto",
+			"Fields": [
+				{
+					"Name": "Events",
+					"Type": "[]*Event"
+				},
+				{
+					"Name": "HasNext",
+					"Type": "bool"
+				},
+				{
+					"Name": "ThreadTotalCount",
+					"Type": "string"
+				},
+				{
+					"Name": "Cursor",
+					"Type": "string"
+				}
+			]
+		},
+		{
 			"Name": "EventDTO",
 			"Type": "dto",
 			"FactoryCustomCode": [],
