@@ -42,18 +42,15 @@ func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	resp := Srv.Store.Osin.NewResponse()
 	defer resp.Close()
 
-	// ir := Srv.Store.Osin.HandleInfoRequest(resp, r)
+	ir := Srv.Store.Osin.HandleInfoRequest(resp, r)
 
-	// if ir == nil {
-	// 	c.Err = models.NewAppError()
-	// 	c.Err.StatusCode = 401
-	// }
-
-	// Find client by id ir.AccessData.Client.GetId()
-	// c.T.ClientId = c.Session.GetSession().UserId
-
-	c.Session.Client.Id = uuid.FromStringOrNil("b4c8dd5b-852c-460a-9b4a-26109f9162a2")
-	c.T.ClientId = c.Session.Client.Id.String()
+	if ir == nil {
+		c.Err = models.NewAppError()
+		c.Err.StatusCode = 401
+	} else {
+		c.Session.Client.Id = uuid.FromStringOrNil(ir.AccessData.Client.GetId())
+		c.T.ClientId = c.Session.Client.Id.String()
+	}
 
 	if utils.Cfg.ServiceSettings.Mode != utils.MODE_PROD {
 		time.Sleep(time.Millisecond * utils.Cfg.ServiceSettings.TimeoutRequest)

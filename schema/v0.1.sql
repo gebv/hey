@@ -7,7 +7,7 @@
 id           text NOT NULL PRIMARY KEY,
 	secret 		 text NOT NULL,
 	extra 		 text NOT NULL,
-	redirect_uri text NOT NULL
+	l text NOT NULL
 */
 CREATE TABLE IF NOT EXISTS client (
 	id uuid NOT NULL PRIMARY KEY,
@@ -17,6 +17,7 @@ CREATE TABLE IF NOT EXISTS client (
 	
 	secret text NOT NULL,
 	redirect_uri text NOT NULL,
+	extra 		 text NOT NULL,
 	scopes text[] NOT NULL,
 	
 	flags text[],
@@ -30,8 +31,8 @@ CREATE TABLE IF NOT EXISTS client (
 	CONSTRAINT uniq_domains_idx UNIQUE (domain)
 );
 
-INSERT INTO client(id, domain, ips, secret, redirect_uri, scopes, flags, props, is_enabled, created_at) VALUES
-	('b4c8dd5b-852c-460a-9b4a-26109f9162a2', 'http://localhost:8081', '{127.0.0.1}', 'demo', 'http://localhost:8081/api/v1/hey/callback', '{demo}', '{demo}', '{}', true, now());
+INSERT INTO client(id, domain, ips, secret, redirect_uri, scopes, flags, props, is_enabled, created_at, extra) VALUES
+	('b4c8dd5b-852c-460a-9b4a-26109f9162a2', 'http://localhost:8081', '{127.0.0.1}', 'demo', 'http://192.168.1.36:65002/api/v1/oauth2/callback', '{demo}', '{demo}', '{}', true, now(), 'extra');
 
 CREATE TABLE IF NOT EXISTS users (
 	user_id uuid PRIMARY KEY,

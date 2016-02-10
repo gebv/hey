@@ -13,9 +13,9 @@ func InitUsers(r *mux.Router) {
 	flags := models.StringArray{}
 
 	sr.Handle("/", ApiAppHandler(CreateUser, flags, flags)).Methods("POST")
-	sr.Handle("/{ext_id}", ApiAppHandler(GetUser, flags, flags)).Methods("GET")
-	sr.Handle("/{ext_id}", ApiAppHandler(UpdateUser, flags, flags)).Methods("PUT")
-	sr.Handle("/{ext_id}", ApiAppHandler(EmptyHandler, flags, flags)).Methods("DELETE")
+	sr.Handle("/", ApiAppHandler(GetUser, flags, flags)).Methods("GET")
+	sr.Handle("/", ApiAppHandler(UpdateUser, flags, flags)).Methods("PUT")
+	sr.Handle("/", ApiAppHandler(EmptyHandler, flags, flags)).Methods("DELETE")
 }
 
 func CreateUser(c *Context, w http.ResponseWriter, r *http.Request) {
@@ -48,7 +48,7 @@ func CreateUser(c *Context, w http.ResponseWriter, r *http.Request) {
 
 func GetUser(c *Context, w http.ResponseWriter, r *http.Request) {
 	dto := models.NewUserDTO()
-	dto.ExtId = mux.Vars(r)["ext_id"]
+	dto.ExtId = r.URL.Query().Get("ext_id")
 	dto.ClientId = c.Session.Client.Id.String()
 
 	res, err := Srv.Store.Get("user").(*store.UserStore).GetOne(dto)
@@ -69,7 +69,7 @@ func GetUser(c *Context, w http.ResponseWriter, r *http.Request) {
 
 func UpdateUser(c *Context, w http.ResponseWriter, r *http.Request) {
 	dto := models.NewUserDTO()
-	dto.ExtId = mux.Vars(r)["ext_id"]
+	dto.ExtId = r.URL.Query().Get("ext_id")
 	dto.ClientId = c.Session.Client.Id.String()
 
 	if err := dto.FromJson(r.Body); err != nil {
@@ -98,7 +98,7 @@ func UpdateUser(c *Context, w http.ResponseWriter, r *http.Request) {
 
 func DeleteUser(c *Context, w http.ResponseWriter, r *http.Request) {
 	dto := models.NewUserDTO()
-	dto.ExtId = mux.Vars(r)["ext_id"]	
+	dto.ExtId = r.URL.Query().Get("ext_id")
 	dto.ClientId = c.Session.Client.Id.String()
 
 	if err := dto.FromJson(r.Body); err != nil {
