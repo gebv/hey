@@ -4,7 +4,7 @@
 		"Mode": "dev",
 		"TimeoutRequest": 200
 	},
-	"StorageSettings": {
+	"StorageAppSettings": {
 		"Network": "",
 		"Host": "127.0.0.1",
 		"Port": "",

@@ -40,9 +40,9 @@ func (model EventDTO) TransformTo(out interface{}) error {
 		dto.ExtId = strings.Split(model.Thread, ":")[0]
 	case *ThreadDTO:
 		dto := out.(*ThreadDTO)
-		dto.ExtId = model.Thread
 		dto.ClientId = model.ClientId
 		dto.EventCreator = model.Creator
+		dto.ExtId = model.Thread
 	case *UserDTO:
 		dto := out.(*UserDTO)
 		dto.ClientId = model.ClientId

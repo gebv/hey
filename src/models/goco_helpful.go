@@ -275,9 +275,9 @@ func (model *ResponseDTO) TransformFrom(in interface{}) error {
 	switch in.(type) {
 	case *AppError:
 		dto := in.(*AppError)
-		model.DevMessage = dto.DevMessage
 		model.StatusCode = dto.StatusCode
 		model.Message = dto.Message
+		model.DevMessage = dto.DevMessage
 	default:
 		glog.Errorf("Not supported type %v", in)
 		return ErrNotSupported

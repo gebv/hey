@@ -109,7 +109,7 @@ func NewUserDTO() *UserDTO {
 type UserDTO struct {
 	DTOAbstract
 	// ClientId
-	ClientId string `v:"required" json:"-" `
+	ClientId string `json:"-" v:"required" `
 	// ExtId
 	ExtId string `json:"ext_id" v:"required" `
 	// ExtProps

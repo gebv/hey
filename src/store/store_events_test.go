@@ -4,7 +4,37 @@ import (
 	"testing"
 	"models"
 	"github.com/satori/go.uuid"
+	"encoding/json"
+	"encoding/base64"
+	"time"
+	"strconv"
+	"fmt"
 )
+
+func zzzTestThreadline(t *testing.T) {
+	channel := createChannel(t)
+
+	for i := 0; i < 10000; i++ {
+		dto := models.NewEventDTO()
+		dto.ClientId = channel.ClientId.String()
+		dto.Creator = "demo"
+		dto.Thread = channel.ExtId + ":100events"
+		bytes, _ := json.Marshal(map[string]interface{}{"m": "hey-" + strconv.Itoa(i)})
+		dto.DataBase64 = base64.StdEncoding.EncodeToString(bytes)
+		dto.ExtFlags.Add("schema:default")
+		dto.ExtFlags.Add("iter:"+strconv.Itoa(i))
+
+		_, err := _s.Get("event").(*EventStore).Create(dto)
+
+		if err != nil {
+			t.Error(err)
+			return
+		}
+
+		time.Sleep(time.Microsecond*10)
+	}
+	fmt.Println("Thread = "+channel.ExtId + ":100events")
+}
 
 func TestCreateEvent(t *testing.T) {
 	// Создать канал и создать событие в канал на уровень выше

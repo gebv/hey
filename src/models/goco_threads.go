@@ -5,6 +5,7 @@ import (
 	"github.com/golang/glog"
 	"github.com/satori/go.uuid"
 	"strings"
+	"time"
 )
 
 // ThreadCounter
@@ -146,7 +147,6 @@ func NewThreadline() *Threadline {
 }
 
 type Threadline struct {
-	ModelAbstract
 	// ClientId
 	ClientId uuid.UUID `json:"client_id" `
 	// ChannelId
@@ -155,6 +155,8 @@ type Threadline struct {
 	ThreadId uuid.UUID `json:"thread_id" `
 	// EventId
 	EventId uuid.UUID `json:"event_id" `
+	// CreatedAt
+	CreatedAt time.Time `json:"created_at" sql:"type:timestamp;default:null" `
 }
 
 func (model Threadline) TransformTo(out interface{}) error {
@@ -181,16 +183,18 @@ func (model *Threadline) TransformFrom(in interface{}) error {
 //
 
 func (t *Threadline) Maps() map[string]interface{} {
-	maps := t.ModelAbstract.Maps()
-	// ClientId
-	maps["client_id"] = &t.ClientId
-	// ChannelId
-	maps["channel_id"] = &t.ChannelId
-	// ThreadId
-	maps["thread_id"] = &t.ThreadId
-	// EventId
-	maps["event_id"] = &t.EventId
-	return maps
+	return map[string]interface{}{
+		// ClientId
+		"client_id": &t.ClientId,
+		// ChannelId
+		"channel_id": &t.ChannelId,
+		// ThreadId
+		"thread_id": &t.ThreadId,
+		// EventId
+		"event_id": &t.EventId,
+		// CreatedAt
+		"created_at": &t.CreatedAt,
+	}
 }
 
 // Fields extract of fields from map
@@ -265,9 +269,9 @@ func (model *Thread) TransformFrom(in interface{}) error {
 	switch in.(type) {
 	case *ThreadDTO:
 		dto := in.(*ThreadDTO)
+		model.ExtId = dto.ExtId
 		model.ExtProps = dto.ExtProps
 		model.ExtFlags = dto.ExtFlags
-		model.ExtId = dto.ExtId
 		model.ParentThreadId = uuid.FromStringOrNil(dto.ParentThreadId)
 		model.RelatedEventId = uuid.FromStringOrNil(dto.RelatedEventId)
 		model.ClientId = uuid.FromStringOrNil(dto.ClientId)
@@ -384,11 +388,11 @@ func (model *ThreadDTO) TransformFrom(in interface{}) error {
 	switch in.(type) {
 	case *Channel:
 		dto := in.(*Channel)
-		model.ExtId = dto.ExtId
-		model.ExtProps = dto.ExtProps
 		model.ExtFlags = dto.ExtFlags
 		model.ClientId = dto.ClientId.String()
 		model.ChannelId = dto.ChannelId.String()
+		model.ExtId = dto.ExtId
+		model.ExtProps = dto.ExtProps
 		model.Owners.FromArray(dto.Owners)
 	default:
 		glog.Errorf("Not supported type %v", in)

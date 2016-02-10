@@ -134,7 +134,7 @@ CREATE TABLE IF NOT EXISTS thread_watchers (
 	unread int8,
 
 	CONSTRAINT uniq_client_thread_watchers_idx UNIQUE (client_id, thread_id, user_id)
-);	
+);
 
 
 CREATE TABLE IF NOT EXISTS threadline (
@@ -142,17 +142,24 @@ CREATE TABLE IF NOT EXISTS threadline (
 	channel_id uuid,
 	thread_id uuid,
 
-	event_id uuid,
+	event_id uuid PRIMARY KEY,
 
-  	is_removed boolean DEFAULT false,
-	created_at timestamp with time zone NOT NULL,
-	updated_at timestamp with time zone DEFAULT now() NOT NULL,
-	
-  	CONSTRAINT uniq_threads_idx UNIQUE (client_id, channel_id, thread_id, event_id)
+	created_at timestamp with time zone NOT NULL
 );
 
-CREATE INDEX threadline_created_index ON threadline(created_at DESC NULLS LAST, event_id ASC);
+CREATE INDEX threadline_created_index ON threadline(client_id asc, channel_id asc, thread_id asc, created_at DESC, event_id ASC);
 -- WITH CLUSTERING ORDER BY (created_at DESC, event_id ASC);
+
+-- EXPLAIN ANALYZE SELECT t.event_id, t.created_at/**, e.ext_flags**/ FROM threadline as t
+-- /**	LEFT JOIN events as e ON t.event_id = e.event_id **/
+-- 		WHERE t.client_id = 'b4c8dd5b-852c-460a-9b4a-26109f9162a2' AND t.channel_id = 'ae91eaba-cfc6-11e5-8da4-10ddb19b9d24' AND t.thread_id = 'ae92cbf5-cfc6-11e5-8da4-10ddb19b9d24'
+-- 		ORDER BY t.created_at DESC, t.event_id ASC LIMIT 3;
+		
+-- EXPLAIN ANALYZE SELECT t.event_id, t.created_at *, e.ext_flags* FROM threadline as t
+-- /**	LEFT JOIN events as e ON t.event_id = e.event_id **/
+-- 		WHERE t.client_id = 'b4c8dd5b-852c-460a-9b4a-26109f9162a2' AND t.channel_id = 'ae91eaba-cfc6-11e5-8da4-10ddb19b9d24' AND t.thread_id = 'ae92cbf5-cfc6-11e5-8da4-10ddb19b9d24'
+-- 		AND (t.created_at, t.event_id) < ('2016-02-10 13:20:20.985597+06', 'be6b7518-cfc6-11e5-8da4-10ddb19b9d24')
+-- 		ORDER BY t.created_at DESC, t.event_id ASC LIMIT 3;
 
 CREATE TABLE IF NOT EXISTS events (
 	event_id uuid PRIMARY KEY,

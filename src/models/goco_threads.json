@@ -1,6 +1,6 @@
 {
 	"PkgName": "models",
-	"Imports": ["github.com/satori/go.uuid", "strings", "github.com/golang/glog"],
+	"Imports": ["github.com/satori/go.uuid", "time", "strings", "github.com/golang/glog"],
 	"Models": [
 		{
 			"Name": "ThreadCounter",
@@ -50,7 +50,7 @@
 			"Name": "Threadline",
 			"Type": "database",
 			"TableName": "threadline",
-			"Implements": ["ModelAbstract"],
+			"Implements": [],
 			"FactoryCustomCode": [],
 			"Fields": [
 				{
@@ -71,6 +71,13 @@
 					"Name": "EventId",
 					"Type": "uuid.UUID",
 					"IsPrimaryKey": true
+				},
+				{
+					"Name": "CreatedAt",
+					"Type": "time.Time",
+					"Tags": {
+						"sql": "type:timestamp;default:null"
+					}
 				}
 			]
 		},

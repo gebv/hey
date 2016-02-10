@@ -138,7 +138,7 @@ func (s *EventStore) Create(dto *models.EventDTO) (models.ModelAbstractInterface
 			return nil, err
 		}
 
-		// TODO: вынести в отдельный поток
+		// TODO: вынести в отдельный поток       
 		branchThread := models.NewThread()
 		branchThread.ThreadId = model.ThreadId
 		branchThread.RelatedEventId = parentEvent.EventId
@@ -159,13 +159,14 @@ func (s *EventStore) Create(dto *models.EventDTO) (models.ModelAbstractInterface
 
 	// Threadline
 
-	// TODO: вынести в отдельный поток
+	// TODO: вынести в отдельный поток, после проверки сообщение становится доступным публике
 	threadline := models.NewThreadline()
 	fields, _ = threadline.Fields()
 	threadline.ClientId = model.ClientId
 	threadline.ThreadId = model.ThreadId
 	threadline.ChannelId = model.ChannelId
 	threadline.EventId = model.EventId
+	threadline.CreatedAt = model.CreatedAt
 
 	if err := CreateModel(threadline, s.db, tx, fields...); err != nil {
 		tx.Rollback()
