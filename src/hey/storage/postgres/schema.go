@@ -25,4 +25,23 @@ var schemaBase = []string{
         created_at timestamp with time zone NOT NULL,
         updated_at timestamp with time zone DEFAULT now() NOT NULL
     )`,
+	`CREATE TABLE IF NOT EXISTS events (
+        event_id uuid PRIMARY KEY,
+        client_id uuid,
+        thread_id uuid,
+        channel_id uuid,
+
+        creator uuid,
+
+        data bytea,
+
+        parent_thread_id uuid,
+        parent_event_id uuid,
+        branch_thread_id uuid,
+
+        created_at timestamp with time zone NOT NULL,
+        updated_at timestamp with time zone DEFAULT now() NOT NULL,
+        
+        CONSTRAINT uniq_client_event_idx UNIQUE (client_id, event_id)
+    )`,
 }
