@@ -33,6 +33,8 @@ func (r *ThreadRepository) clientIDFromContext(ctx context.Context) uuid.UUID {
 	return ClientIDFromContext(ctx)
 }
 
+// CreateThread create new thread
+// waiting in the context of the client ID, linked event and thread IDs
 func (r *ThreadRepository) CreateThread(
 	ctx context.Context,
 	channelID,

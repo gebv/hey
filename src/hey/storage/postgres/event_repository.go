@@ -45,7 +45,9 @@ func (r *EventRepository) clientIDFromContext(ctx context.Context) uuid.UUID {
 	return ClientIDFromContext(ctx)
 }
 
-// CreateEvent
+// CreateEvent create new event
+// waiting in the context of the client ID, channel ID, linked parent
+// event and thread IDs
 func (r *EventRepository) CreateEvent(
 	ctx context.Context,
 	threadID,
@@ -106,6 +108,50 @@ func (r *EventRepository) CreateEvent(
 		   1. threadline
 		   2. thread_watchers
 		*/
+	}()
+
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case err := <-done:
+		return err
+	}
+}
+
+func (r *EventRepository) CreateThreadline(
+	ctx context.Context,
+	channelID,
+	threadID,
+	eventID uuid.UUID,
+) error {
+	ctx, cancel := context.WithTimeout(ctx, time.Millisecond*100)
+	done := make(chan error, 1)
+	defer func() {
+		cancel()
+		close(done)
+	}()
+
+	clientID := r.clientIDFromContext(ctx)
+	conn := storage.FromContext(ctx)
+
+	go func() {
+		var err error
+		defer func() {
+			done <- err
+		}()
+		_, err = conn.Exec(`INSERT INTO threadline (
+            client_id,
+            channel_id,
+            thread_id,
+            event_id,
+            created_at
+        ) VALUES ($1, $2, $3, $4, $5)`,
+			clientID,
+			channelID,
+			threadID,
+			eventID,
+			time.Now(),
+		)
 	}()
 
 	select {

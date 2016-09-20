@@ -44,4 +44,20 @@ var schemaBase = []string{
         
         CONSTRAINT uniq_client_event_idx UNIQUE (client_id, event_id)
     )`,
+	`CREATE TABLE IF NOT EXISTS threadline (
+        client_id uuid,
+        channel_id uuid,
+        thread_id uuid,
+
+        event_id uuid PRIMARY KEY,
+
+        created_at timestamp with time zone NOT NULL
+    )`,
+	`CREATE INDEX IF NOT EXISTS threadline_created_index ON threadline(
+        client_id asc, 
+        channel_id asc, 
+        thread_id asc, 
+        created_at DESC, 
+        event_id ASC
+        )`,
 }
