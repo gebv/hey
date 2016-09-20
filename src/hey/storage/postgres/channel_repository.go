@@ -2,11 +2,10 @@ package postgres
 
 import (
 	"context"
+	"errors"
 	"hey/storage"
 	"hey/utils"
 	"time"
-
-	"log"
 
 	"github.com/satori/go.uuid"
 )
@@ -15,13 +14,8 @@ type ChannelRepository struct {
 }
 
 func (r *ChannelRepository) clientIDFromContext(ctx context.Context) uuid.UUID {
-	if clientID, ok := ctx.Value("ClientID").(uuid.UUID); ok {
-		return clientID
-	}
 
-	log.Panicln("[FAIL]", "the context does not contain information about the client")
-
-	return uuid.Nil
+	return ClientIDFromContext(ctx)
 }
 
 // CreateChannel create new channel
@@ -74,4 +68,17 @@ func (r *ChannelRepository) CreateChannel(
 	case err := <-done:
 		return err
 	}
+}
+
+// CreateRelatedEntities create the related entities (only for new channel)
+func (r *ChannelRepository) CreateRelatedEntities(
+	ctx context.Context,
+	channelID uuid.UUID,
+) error {
+	// TODO: create
+	/*
+		1. channel_counters
+		2. channel_watchers
+	*/
+	return errors.New("not implemented")
 }

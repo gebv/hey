@@ -10,8 +10,10 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestChannelRepository_simple(t *testing.T) {
+func TestThreadRepository_simple(t *testing.T) {
 	var clientID = uuid.NewV4()
+	var relatedEventID = uuid.NewV4()
+	var parentThreadID = uuid.NewV4()
 
 	tx, err := db.(storage.BeginTX).Begin()
 	assert.NoError(t, err)
@@ -19,20 +21,22 @@ func TestChannelRepository_simple(t *testing.T) {
 	ctx := context.Background()
 	ctx = context.WithValue(ctx, "__conn", tx)
 	ctx = context.WithValue(ctx, clientIDContextKey, clientID)
+	ctx = context.WithValue(ctx, relatedEventIDContextKey, relatedEventID)
+	ctx = context.WithValue(ctx, parentThreadIDContextKey, parentThreadID)
 
-	repo := &ChannelRepository{}
+	repo := &ThreadRepository{}
 	var creatorID,
-		rootThradID,
+		threadID,
 		channelID = uuid.NewV4(), uuid.NewV4(), uuid.NewV4()
 	var someOwnerID = uuid.NewV4()
 
-	err = repo.CreateChannel(
+	err = repo.CreateThread(
 		ctx,
-		channelID,                           // channe ID
-		rootThradID,                         // root thread ID
+		channelID, // channe ID
+		threadID,  // new thread ID
 		[]uuid.UUID{creatorID, someOwnerID}, // creator ID (ref. to users)
 	)
-	assert.NoError(t, err, "Create channel")
+	assert.NoError(t, err, "Create thread")
 
 	if err != nil {
 		tx.Rollback()
@@ -48,25 +52,36 @@ func TestChannelRepository_simple(t *testing.T) {
 
 	// check in the database
 
-	var gotChannelID, gotRootThreadID, gotClientID uuid.UUID
+	var gotThreadID,
+		gotChannelID,
+		gotRelatedEventID,
+		gotParentThreadID,
+		gotClientID uuid.UUID
+
 	var gotOwners utils.UUIDS
 	var owners = utils.UUIDS{creatorID, someOwnerID}
 
 	err = db.QueryRow(`SELECT
-		channel_id,
+		thread_id,
 		client_id,
+		channel_id,
 		owners,
-		root_thread_id 
-	FROM channels WHERE channel_id = $1`, channelID).
+		related_event_id,
+        parent_thread_id 
+	FROM threads WHERE thread_id = $1`, threadID).
 		Scan(
-			&gotChannelID,
+			&gotThreadID,
 			&gotClientID,
+			&gotChannelID,
 			&gotOwners,
-			&gotRootThreadID,
+			&gotRelatedEventID,
+			&gotParentThreadID,
 		)
 	assert.NoError(t, err)
+	assert.Equal(t, gotThreadID, threadID)
 	assert.Equal(t, gotChannelID, channelID)
-	assert.Equal(t, gotRootThreadID, rootThradID)
+	assert.Equal(t, gotRelatedEventID, relatedEventID)
+	assert.Equal(t, gotParentThreadID, parentThreadID)
 	assert.Equal(t, gotClientID, clientID)
 	assert.Equal(t, gotOwners, owners)
 }
