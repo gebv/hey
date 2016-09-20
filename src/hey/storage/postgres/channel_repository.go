@@ -29,8 +29,8 @@ func (r *ChannelRepository) clientIDFromContext(ctx context.Context) uuid.UUID {
 func (r *ChannelRepository) CreateChannel(
 	ctx context.Context,
 	channelID,
-	rootThreadID,
-	creatorID uuid.UUID,
+	rootThreadID uuid.UUID,
+	owners []uuid.UUID,
 ) error {
 	ctx, cancel := context.WithTimeout(ctx, time.Millisecond*100)
 	done := make(chan error, 1)
@@ -57,7 +57,7 @@ func (r *ChannelRepository) CreateChannel(
         ) VALUES ($1, $2, $3, $4, $5, $6)`,
 			channelID,
 			clientID,
-			utils.UUIDS{creatorID},
+			(&utils.UUIDS{}).FromArray(owners),
 			rootThreadID,
 			time.Now(),
 			time.Now(),

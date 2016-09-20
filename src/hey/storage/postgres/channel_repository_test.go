@@ -24,12 +24,13 @@ func TestChannelRepository_simple(t *testing.T) {
 	var creatorID,
 		rootThradID,
 		channelID = uuid.NewV4(), uuid.NewV4(), uuid.NewV4()
+	var someOwnerID = uuid.NewV4()
 
 	err = repo.CreateChannel(
 		ctx,
-		channelID,   // channe ID
-		rootThradID, // root thread ID
-		creatorID,   // creator ID (ref. to users)
+		channelID,                           // channe ID
+		rootThradID,                         // root thread ID
+		[]uuid.UUID{creatorID, someOwnerID}, // creator ID (ref. to users)
 	)
 	assert.NoError(t, err, "Create channel")
 
@@ -49,7 +50,7 @@ func TestChannelRepository_simple(t *testing.T) {
 
 	var gotChannelID, gotRootThreadID, gotClientID uuid.UUID
 	var gotOwners utils.UUIDS
-	var owners = utils.UUIDS{creatorID}
+	var owners = utils.UUIDS{creatorID, someOwnerID}
 
 	err = db.QueryRow(`SELECT
 		channel_id,
