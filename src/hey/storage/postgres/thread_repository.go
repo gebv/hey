@@ -41,7 +41,7 @@ func (r *ThreadRepository) CreateThread(
 	threadID uuid.UUID,
 	owners []uuid.UUID,
 ) error {
-	ctx, cancel := context.WithTimeout(ctx, time.Millisecond*300)
+	ctx, cancel := context.WithTimeout(ctx, time.Millisecond*50)
 	done := make(chan error, 1)
 	defer func() {
 		cancel()
@@ -109,7 +109,7 @@ func (r *ThreadRepository) AddCountEvents(
 	threadID uuid.UUID,
 	count int,
 ) error {
-	ctx, cancel := context.WithTimeout(ctx, time.Millisecond*300)
+	ctx, cancel := context.WithTimeout(ctx, time.Millisecond*50)
 	done := make(chan error, 1)
 	defer func() {
 		cancel()
@@ -160,7 +160,7 @@ func (r *ThreadRepository) SetUnreadByUser(
 	userID uuid.UUID,
 	count int,
 ) error {
-	ctx, cancel := context.WithTimeout(ctx, time.Millisecond*300)
+	ctx, cancel := context.WithTimeout(ctx, time.Millisecond*50)
 	done := make(chan error, 1)
 	defer func() {
 		cancel()

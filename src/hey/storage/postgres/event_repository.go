@@ -55,7 +55,7 @@ func (r *EventRepository) CreateEvent(
 	creatorID uuid.UUID,
 	data []byte,
 ) error {
-	ctx, cancel := context.WithTimeout(ctx, time.Millisecond*100)
+	ctx, cancel := context.WithTimeout(ctx, time.Millisecond*50)
 	done := make(chan error, 1)
 	defer func() {
 		cancel()
@@ -102,12 +102,6 @@ func (r *EventRepository) CreateEvent(
 			time.Now(),
 			time.Now(),
 		)
-
-		// TODO: create related entities
-		/*
-		   1. threadline
-		   2. thread_watchers
-		*/
 	}()
 
 	select {
@@ -124,7 +118,7 @@ func (r *EventRepository) CreateThreadline(
 	threadID,
 	eventID uuid.UUID,
 ) error {
-	ctx, cancel := context.WithTimeout(ctx, time.Millisecond*100)
+	ctx, cancel := context.WithTimeout(ctx, time.Millisecond*50)
 	done := make(chan error, 1)
 	defer func() {
 		cancel()
