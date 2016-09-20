@@ -2,7 +2,6 @@ package postgres
 
 import (
 	"context"
-	"errors"
 	"hey/storage"
 	"hey/utils"
 	"time"
@@ -57,9 +56,15 @@ func (r *ChannelRepository) CreateChannel(
 			time.Now(),
 		)
 
-		// TODO: insert into
-		// 1. channel_counters
-		// 2. channel_watchers
+		err = r.AddCountEvents(
+			ctx,
+			channelID,
+			0,
+		)
+
+		if err != nil {
+			return
+		}
 	}()
 
 	select {
@@ -70,15 +75,99 @@ func (r *ChannelRepository) CreateChannel(
 	}
 }
 
-// CreateRelatedEntities create the related entities (only for new channel)
-func (r *ChannelRepository) CreateRelatedEntities(
+func (r *ChannelRepository) AddCountEvents(
 	ctx context.Context,
 	channelID uuid.UUID,
+	count int,
 ) error {
-	// TODO: create
-	/*
-		1. channel_counters
-		2. channel_watchers
-	*/
-	return errors.New("not implemented")
+	ctx, cancel := context.WithTimeout(ctx, time.Millisecond*300)
+	done := make(chan error, 1)
+	defer func() {
+		cancel()
+		close(done)
+	}()
+
+	clientID := r.clientIDFromContext(ctx)
+	conn := storage.FromContext(ctx)
+
+	go func() {
+		var err error
+		defer func() {
+			done <- err
+		}()
+
+		sql := `INSERT INTO channel_counters (
+            client_id,
+            channel_id,
+            counter_events
+        ) VALUES ($1, $2, $3)
+        ON CONFLICT (client_id, channel_id)
+        DO UPDATE SET
+            counter_events = channel_counters.counter_events + EXCLUDED.counter_events`
+		_, err = conn.Exec(sql,
+			clientID,
+			channelID,
+			count,
+		)
+		if err != nil {
+			return
+		}
+	}()
+
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case err := <-done:
+		return err
+	}
+}
+
+// SetUnreadByUser update number of unread events of user
+func (r *ChannelRepository) SetUnreadByUser(
+	ctx context.Context,
+	channelID,
+	userID uuid.UUID,
+	count int,
+) error {
+	ctx, cancel := context.WithTimeout(ctx, time.Millisecond*300)
+	done := make(chan error, 1)
+	defer func() {
+		cancel()
+		close(done)
+	}()
+
+	clientID := r.clientIDFromContext(ctx)
+	conn := storage.FromContext(ctx)
+
+	go func() {
+		var err error
+		defer func() {
+			done <- err
+		}()
+		sql := `INSERT INTO channel_watchers (
+            client_id,
+            channel_id,
+            user_id,
+            unread
+        ) VALUES ($1, $2, $3, $4)
+        ON CONFLICT (client_id, channel_id, user_id)
+        DO UPDATE SET
+            unread = channel_watchers.unread + EXCLUDED.unread`
+		_, err = conn.Exec(sql,
+			clientID,
+			channelID,
+			userID,
+			count,
+		)
+		if err != nil {
+			return
+		}
+	}()
+
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case err := <-done:
+		return err
+	}
 }

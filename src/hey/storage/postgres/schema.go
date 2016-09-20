@@ -60,4 +60,38 @@ var schemaBase = []string{
         created_at DESC, 
         event_id ASC
         )`,
+	`CREATE TABLE IF NOT EXISTS thread_watchers (
+        client_id uuid,
+        thread_id uuid,
+        user_id uuid,
+        
+        unread int8,
+
+        CONSTRAINT uniq_client_thread_watchers_idx UNIQUE (client_id, thread_id, user_id)
+    )`,
+	`CREATE TABLE IF NOT EXISTS thread_counters (
+        client_id uuid,
+        thread_id uuid,
+
+        counter_events int8,
+
+        CONSTRAINT uniq_client_thread_counter_idx UNIQUE (client_id, thread_id)
+    )`,
+	`CREATE TABLE IF NOT EXISTS channel_watchers (
+        client_id uuid,
+        channel_id uuid,
+        user_id uuid,
+        
+        unread int8,
+
+        CONSTRAINT uniq_client_channel_watchers_idx UNIQUE (client_id, channel_id, user_id)
+    )`,
+	`CREATE TABLE IF NOT EXISTS channel_counters (
+        client_id uuid,
+        channel_id uuid,
+
+        counter_events int8,
+
+        CONSTRAINT uniq_client_channel_counter_idx UNIQUE (client_id, channel_id)
+    )`,
 }
