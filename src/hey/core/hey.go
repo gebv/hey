@@ -32,6 +32,12 @@ type HeyService struct {
 // interfaces
 
 type EventRepository interface {
+	SetBranchThreadID(
+		ctx context.Context,
+		eventID,
+		branchThreadID uuid.UUID,
+	) error
+
 	CreateEvent(
 		ctx context.Context,
 		eventID,

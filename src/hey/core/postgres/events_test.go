@@ -107,6 +107,215 @@ func TestHeyService_simple_workspace(t *testing.T) {
 	assert.Equal(t, gotParentThreadID, uuid.Nil)
 }
 
+func TestHeyService_simple_NewEvent(t *testing.T) {
+	db.Exec(`DELETE FROM events;`)
+
+	repoThreads := &postgres.ThreadRepository{}
+	repoChannels := &postgres.ChannelRepository{}
+	repoEvents := &postgres.EventRepository{}
+
+	var clientID = uuid.NewV4()
+	var creatorID = uuid.NewV4()
+	var owners = []uuid.UUID{
+		creatorID,
+	}
+
+	ctx := context.Background()
+	ctx = context.WithValue(ctx, "ClientID", clientID)
+	// ctx = context.WithValue(context.Background(), "__conn", db)
+
+	hey := core.NewHeyService(
+		db,
+		repoEvents,
+		repoThreads,
+		repoChannels,
+	)
+
+	channelID, threadID, err := hey.CreateChannel(
+		ctx,
+		owners,
+	)
+	assert.NoError(t, err)
+	assert.NotEqual(t, channelID, uuid.Nil)
+	assert.NotEqual(t, threadID, uuid.Nil)
+
+	// Create nodal event
+	branchThreadID, nodalEventID, err := hey.CreateNodalEvent(
+		ctx,
+		threadID,
+		owners,
+		creatorID,
+	)
+	assert.NoError(t, err)
+	assert.NotEqual(t, branchThreadID, uuid.Nil)
+	assert.NotEqual(t, nodalEventID, uuid.Nil)
+
+	// Create new event
+	newEventID, err := hey.CreateEvent(
+		ctx,
+		branchThreadID,
+		creatorID,
+		[]byte("hello machine"),
+	)
+	assert.NoError(t, err)
+	assert.NotEqual(t, newEventID, uuid.Nil)
+
+	// check in the database
+
+	var gotEventID,
+		gotClientID,
+		gotThreadID,
+		gotChannelID,
+		gotCreatorID,
+		gotParentThreadID,
+		gotParetnEventID,
+		gotBranchThreadID uuid.UUID
+	var gotData []byte
+
+	err = db.QueryRow(`SELECT
+		event_id,
+		client_id,
+		thread_id,
+		channel_id,
+		creator,
+		data,
+		parent_thread_id,
+		parent_event_id,
+		branch_thread_id
+	FROM events 
+	WHERE client_id = $1 AND event_id = $2`,
+		clientID,
+		newEventID,
+	).Scan(
+		&gotEventID,
+		&gotClientID,
+		&gotThreadID,
+		&gotChannelID,
+		&gotCreatorID,
+		&gotData,
+		&gotParentThreadID,
+		&gotParetnEventID,
+		&gotBranchThreadID,
+	)
+	assert.NoError(t, err)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Equal(t, gotEventID, newEventID)
+	assert.Equal(t, gotClientID, clientID)
+	assert.Equal(t, gotThreadID, branchThreadID)
+	assert.Equal(t, gotChannelID, channelID)
+	assert.Equal(t, gotCreatorID, creatorID)
+	assert.Equal(t, gotData, []byte("hello machine"))
+	assert.Equal(t, gotParentThreadID, threadID)
+	assert.Equal(t, gotParetnEventID, nodalEventID)
+	assert.Equal(t, gotBranchThreadID, uuid.Nil)
+}
+
+func TestHeyService_simple_NewBranchEvent(t *testing.T) {
+	db.Exec(`DELETE FROM events;`)
+
+	repoThreads := &postgres.ThreadRepository{}
+	repoChannels := &postgres.ChannelRepository{}
+	repoEvents := &postgres.EventRepository{}
+
+	var clientID = uuid.NewV4()
+	var creatorID = uuid.NewV4()
+	var owners = []uuid.UUID{
+		creatorID,
+	}
+
+	ctx := context.Background()
+	ctx = context.WithValue(ctx, "ClientID", clientID)
+	// ctx = context.WithValue(context.Background(), "__conn", db)
+
+	hey := core.NewHeyService(
+		db,
+		repoEvents,
+		repoThreads,
+		repoChannels,
+	)
+
+	channelID, threadID, err := hey.CreateChannel(
+		ctx,
+		owners,
+	)
+	assert.NoError(t, err)
+	assert.NotEqual(t, channelID, uuid.Nil)
+	assert.NotEqual(t, threadID, uuid.Nil)
+
+	// Create nodal event
+	branchThreadID, nodalEventID, err := hey.CreateNodalEvent(
+		ctx,
+		threadID,
+		owners,
+		creatorID,
+	)
+	assert.NoError(t, err)
+	assert.NotEqual(t, branchThreadID, uuid.Nil)
+	assert.NotEqual(t, nodalEventID, uuid.Nil)
+
+	// Create new event
+	newEventID, err := hey.CreateEvent(
+		ctx,
+		branchThreadID,
+		creatorID,
+		[]byte("hello machine 1"),
+	)
+	assert.NoError(t, err)
+	assert.NotEqual(t, newEventID, uuid.Nil)
+
+	newEventID, err = hey.CreateEvent(
+		ctx,
+		branchThreadID,
+		creatorID,
+		[]byte("hello machine 2"),
+	)
+	assert.NoError(t, err)
+	assert.NotEqual(t, newEventID, uuid.Nil)
+
+	newEventID, err = hey.CreateEvent(
+		ctx,
+		branchThreadID,
+		creatorID,
+		[]byte("hello machine 3"),
+	)
+	assert.NoError(t, err)
+	assert.NotEqual(t, newEventID, uuid.Nil)
+
+	//
+	newBranchThreadID, newBranchEventid, err := hey.CreateNewBranchEvent(
+		ctx,
+		branchThreadID,
+		newEventID,
+		owners,
+		creatorID,
+		[]byte("first event in a new thread"),
+	)
+	assert.NoError(t, err)
+	assert.NotEqual(t, newBranchThreadID, uuid.Nil)
+	assert.NotEqual(t, newBranchEventid, uuid.Nil)
+
+	// check in the database
+
+	var gotBranchThreadID uuid.UUID
+
+	err = db.QueryRow(`SELECT
+		branch_thread_id
+	FROM events
+	WHERE client_id = $1 AND event_id = $2`,
+		clientID,
+		newEventID,
+	).Scan(
+		&gotBranchThreadID,
+	)
+	assert.NoError(t, err)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Equal(t, gotBranchThreadID, newBranchThreadID)
+}
+
 func TestHeyService_simple_NodalEvent(t *testing.T) {
 	repoThreads := &postgres.ThreadRepository{}
 	repoChannels := &postgres.ChannelRepository{}
@@ -137,7 +346,7 @@ func TestHeyService_simple_NodalEvent(t *testing.T) {
 	assert.NotEqual(t, channelID, uuid.Nil)
 	assert.NotEqual(t, threadID, uuid.Nil)
 
-	// Create event
+	// Create nodal event
 	branchThreadID, nodalEventID, err := hey.CreateNodalEvent(
 		ctx,
 		threadID,
