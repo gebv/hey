@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	"hey/core/interfaces"
 	"hey/storage"
 	"hey/utils"
 	"time"
@@ -9,36 +10,71 @@ import (
 	uuid "github.com/satori/go.uuid"
 )
 
-var (
-	relatedEventIDContextKey = "RelatedEventID"
-	parentThreadIDContextKey = "ParentThreadID"
-)
-
 type ThreadRepository struct {
-}
-
-func (r *ThreadRepository) relatedEventIDFromContext(
-	ctx context.Context,
-) uuid.UUID {
-	return getUUIDFromContext(relatedEventIDContextKey, ctx)
-}
-
-func (r *ThreadRepository) parentThreadIDFromContext(
-	ctx context.Context,
-) uuid.UUID {
-	return getUUIDFromContext(parentThreadIDContextKey, ctx)
 }
 
 func (r *ThreadRepository) clientIDFromContext(ctx context.Context) uuid.UUID {
 	return ClientIDFromContext(ctx)
 }
 
+// FindThread returns thread
+func (r *ThreadRepository) FindThread(
+	ctx context.Context,
+	threadID uuid.UUID,
+) (interfaces.Thread, error) {
+	ctx, cancel := context.WithTimeout(ctx, time.Millisecond*50)
+	done := make(chan error, 1)
+	defer func() {
+		cancel()
+		close(done)
+	}()
+
+	thread := thread{}
+
+	clientID := r.clientIDFromContext(ctx)
+	conn := storage.FromContext(ctx)
+
+	go func() {
+		var err error
+		defer func() {
+			done <- err
+		}()
+		err = conn.QueryRow(`
+			SELECT 
+				thread_id,
+				client_id, 
+				channel_id,
+				owners,
+				related_event_id,
+				parent_thread_id
+			FROM threads
+			WHERE client_id = $1 AND thread_id = $2
+		`, clientID, threadID).Scan(
+			&thread.threadID,
+			&thread.clientID,
+			&thread.channelID,
+			&thread.owners,
+			&thread.relatedEventID,
+			&thread.parentThreadID,
+		)
+	}()
+
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	case err := <-done:
+		return &thread, err
+	}
+}
+
 // CreateThread create new thread
 // waiting in the context of the client ID, linked event and thread IDs
 func (r *ThreadRepository) CreateThread(
 	ctx context.Context,
+	threadID,
 	channelID,
-	threadID uuid.UUID,
+	relatedEventID,
+	parentThreadID uuid.UUID,
 	owners []uuid.UUID,
 ) error {
 	ctx, cancel := context.WithTimeout(ctx, time.Millisecond*50)
@@ -49,8 +85,6 @@ func (r *ThreadRepository) CreateThread(
 	}()
 
 	clientID := r.clientIDFromContext(ctx)
-	relatedEventID := r.relatedEventIDFromContext(ctx)
-	parentThreadID := r.parentThreadIDFromContext(ctx)
 	conn := storage.FromContext(ctx)
 
 	go func() {

@@ -10,6 +10,7 @@ func FromContext(ctx context.Context) DB {
 	if db, ok := ctx.Value("__conn").(DB); ok {
 		return db
 	}
+
 	log.Fatalln("[FAIL]", "empty db connection")
 	return nil
 }

@@ -20,15 +20,15 @@ func TestThreadRepository_simple_RelatedEventsAndCountEvents(t *testing.T) {
 	ctx := context.Background()
 	ctx = context.WithValue(ctx, "__conn", tx)
 	ctx = context.WithValue(ctx, clientIDContextKey, clientID)
-	ctx = context.WithValue(ctx, relatedEventIDContextKey, uuid.NewV4())
-	ctx = context.WithValue(ctx, parentThreadIDContextKey, uuid.NewV4())
 
 	repo := &ThreadRepository{}
 	// create related entities
 	err = repo.CreateThread(
 		ctx,
-		uuid.NewV4(),
 		threadID,
+		uuid.NewV4(),
+		uuid.NewV4(),
+		uuid.NewV4(),
 		[]uuid.UUID{uuid.NewV4(), uuid.NewV4()},
 	)
 	assert.NoError(t, err)
@@ -121,8 +121,6 @@ func TestThreadRepository_simple_create(t *testing.T) {
 	ctx := context.Background()
 	ctx = context.WithValue(ctx, "__conn", tx)
 	ctx = context.WithValue(ctx, clientIDContextKey, clientID)
-	ctx = context.WithValue(ctx, relatedEventIDContextKey, relatedEventID)
-	ctx = context.WithValue(ctx, parentThreadIDContextKey, parentThreadID)
 
 	repo := &ThreadRepository{}
 	var creatorID,
@@ -132,8 +130,10 @@ func TestThreadRepository_simple_create(t *testing.T) {
 
 	err = repo.CreateThread(
 		ctx,
-		channelID, // channe ID
 		threadID,  // new thread ID
+		channelID, // channe ID
+		relatedEventID,
+		parentThreadID,
 		[]uuid.UUID{creatorID, someOwnerID}, // creator ID (ref. to users)
 	)
 	assert.NoError(t, err, "Create thread")

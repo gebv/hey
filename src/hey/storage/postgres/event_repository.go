@@ -8,37 +8,7 @@ import (
 	uuid "github.com/satori/go.uuid"
 )
 
-var (
-	parentEventIDContextKey  = "ParentEventID"
-	branchThreadIDContextKey = "BranchThreadID"
-	channelIDContextKey      = "ChannelID"
-)
-
 type EventRepository struct {
-}
-
-func (r *EventRepository) parentEventIDFromContext(
-	ctx context.Context,
-) uuid.UUID {
-	return getUUIDFromContext(parentEventIDContextKey, ctx)
-}
-
-func (r *EventRepository) parentThreadIDFromContext(
-	ctx context.Context,
-) uuid.UUID {
-	return getUUIDFromContext(parentThreadIDContextKey, ctx)
-}
-
-func (r *EventRepository) branchThreadIDFromContext(
-	ctx context.Context,
-) uuid.UUID {
-	return getUUIDFromContext(branchThreadIDContextKey, ctx)
-}
-
-func (r *EventRepository) channelIDFromContext(
-	ctx context.Context,
-) uuid.UUID {
-	return getUUIDFromContext(channelIDContextKey, ctx)
 }
 
 func (r *EventRepository) clientIDFromContext(ctx context.Context) uuid.UUID {
@@ -50,9 +20,13 @@ func (r *EventRepository) clientIDFromContext(ctx context.Context) uuid.UUID {
 // event and thread IDs
 func (r *EventRepository) CreateEvent(
 	ctx context.Context,
-	threadID,
 	eventID,
-	creatorID uuid.UUID,
+	threadID,
+	channelID,
+	creatorID,
+	parentThreadID,
+	parentEventID,
+	branchThreadID uuid.UUID,
 	data []byte,
 ) error {
 	ctx, cancel := context.WithTimeout(ctx, time.Millisecond*50)
@@ -62,10 +36,7 @@ func (r *EventRepository) CreateEvent(
 		close(done)
 	}()
 
-	channelID := r.channelIDFromContext(ctx)
 	clientID := r.clientIDFromContext(ctx)
-	parentEventID := r.parentEventIDFromContext(ctx)
-	parentThreadID := r.parentThreadIDFromContext(ctx)
 	conn := storage.FromContext(ctx)
 
 	go func() {
@@ -98,7 +69,7 @@ func (r *EventRepository) CreateEvent(
 			data, // data
 			parentThreadID,
 			parentEventID,
-			uuid.Nil, // branch thread id
+			branchThreadID, // branch thread id
 			time.Now(),
 			time.Now(),
 		)

@@ -2,13 +2,24 @@ package core
 
 import (
 	"context"
+	"hey/core/interfaces"
 	"hey/storage"
 
 	uuid "github.com/satori/go.uuid"
 )
 
-func NewHeyService() *HeyService {
-	return &HeyService{}
+func NewHeyService(
+	conn storage.DB,
+	eventsRepo EventRepository,
+	threadsRepo ThreadRepository,
+	channelsRepo ChannelRepository,
+) *HeyService {
+	return &HeyService{
+		conn:         conn,
+		eventsRepo:   eventsRepo,
+		threadsRepo:  threadsRepo,
+		channelsRepo: channelsRepo,
+	}
 }
 
 type HeyService struct {
@@ -21,11 +32,15 @@ type HeyService struct {
 // interfaces
 
 type EventRepository interface {
-	CreateChannel(
+	CreateEvent(
 		ctx context.Context,
 		eventID,
 		threadID,
-		creatorID uuid.UUID,
+		channelID,
+		creatorID,
+		parentThreadID,
+		parentEventID,
+		branchThreadID uuid.UUID,
 		data []byte,
 	) error
 
@@ -38,10 +53,16 @@ type EventRepository interface {
 }
 
 type ThreadRepository interface {
+	FindThread(
+		ctx context.Context,
+		threadID uuid.UUID) (interfaces.Thread, error)
+
 	CreateThread(
 		ctx context.Context,
+		threadID,
 		channelID,
-		threadID uuid.UUID,
+		relatedEventID,
+		parentThreadID uuid.UUID,
 		owners []uuid.UUID,
 	) error
 	AddCountEvents(
@@ -64,11 +85,13 @@ type ChannelRepository interface {
 		rootThreadID uuid.UUID,
 		owners []uuid.UUID,
 	) error
+
 	AddCountEvents(
 		ctx context.Context,
 		channelID uuid.UUID,
 		count int,
-	)
+	) error
+
 	SetUnreadByUser(
 		ctx context.Context,
 		channelID,

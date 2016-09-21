@@ -81,9 +81,6 @@ func TestEventRepository_simple(t *testing.T) {
 	ctx := context.Background()
 	ctx = context.WithValue(ctx, "__conn", tx)
 	ctx = context.WithValue(ctx, clientIDContextKey, clientID)
-	ctx = context.WithValue(ctx, parentEventIDContextKey, parentEventID)
-	ctx = context.WithValue(ctx, parentThreadIDContextKey, parentThreadID)
-	ctx = context.WithValue(ctx, channelIDContextKey, channelID)
 
 	repo := &EventRepository{}
 	var creatorID,
@@ -92,9 +89,13 @@ func TestEventRepository_simple(t *testing.T) {
 
 	err = repo.CreateEvent(
 		ctx,
-		threadID, // channe ID
 		eventID,
-		creatorID, // new thread ID
+		threadID,
+		channelID,
+		creatorID,
+		parentThreadID,
+		parentEventID,
+		uuid.Nil,
 		[]byte("hello"),
 	)
 	assert.NoError(t, err, "Create event")

@@ -1,6 +1,6 @@
 package postgres
 
-var schemaBase = []string{
+var SchemaBase = []string{
 	`CREATE TABLE IF NOT EXISTS channels (
         channel_id uuid PRIMARY KEY,
         client_id uuid,

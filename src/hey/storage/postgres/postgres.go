@@ -10,6 +10,7 @@ var (
 	_ storage.DB      = (*Conn)(nil)
 	_ storage.BeginTX = (*Conn)(nil)
 	_ storage.TX      = (*ConnTx)(nil)
+	_ storage.DB      = (*ConnTx)(nil)
 )
 
 // SetupPg

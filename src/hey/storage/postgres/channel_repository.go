@@ -25,7 +25,7 @@ func (r *ChannelRepository) CreateChannel(
 	rootThreadID uuid.UUID,
 	owners []uuid.UUID,
 ) error {
-	ctx, cancel := context.WithTimeout(ctx, time.Millisecond*50)
+	ctx, cancel := context.WithTimeout(ctx, time.Millisecond*100)
 	done := make(chan error, 1)
 	defer func() {
 		cancel()
@@ -80,7 +80,7 @@ func (r *ChannelRepository) AddCountEvents(
 	channelID uuid.UUID,
 	count int,
 ) error {
-	ctx, cancel := context.WithTimeout(ctx, time.Millisecond*50)
+	ctx, cancel := context.WithTimeout(ctx, time.Millisecond*100)
 	done := make(chan error, 1)
 	defer func() {
 		cancel()
