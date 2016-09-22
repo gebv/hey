@@ -3,10 +3,15 @@ package core
 import (
 	"context"
 	"errors"
+	"hey/core/interfaces"
 	"hey/storage"
 	"time"
 
 	uuid "github.com/satori/go.uuid"
+)
+
+var (
+	TimeoutDefault time.Duration = 100
 )
 
 // CreateChannel создать канал и поток
@@ -17,7 +22,7 @@ func (s *HeyService) CreateChannel(
 	var channelID = uuid.NewV4()
 	var rootThreadID = uuid.NewV4()
 
-	ctx, cancel := context.WithTimeout(ctx, time.Millisecond*100)
+	ctx, cancel := context.WithTimeout(ctx, time.Millisecond*TimeoutDefault)
 	done := make(chan error, 1)
 	defer func() {
 		cancel()
@@ -83,7 +88,7 @@ func (s *HeyService) CreateNodalEvent(
 	owners []uuid.UUID,
 	creatorID uuid.UUID,
 ) (uuid.UUID, uuid.UUID, error) {
-	ctx, cancel := context.WithTimeout(ctx, time.Millisecond*100)
+	ctx, cancel := context.WithTimeout(ctx, time.Millisecond*TimeoutDefault)
 	done := make(chan error, 1)
 	defer func() {
 		cancel()
@@ -172,7 +177,7 @@ func (s *HeyService) CreateNewBranchEvent(
 	creatorID uuid.UUID,
 	data []byte,
 ) (uuid.UUID, uuid.UUID, error) {
-	ctx, cancel := context.WithTimeout(ctx, time.Millisecond*100)
+	ctx, cancel := context.WithTimeout(ctx, time.Millisecond*TimeoutDefault)
 	done := make(chan error, 1)
 	defer func() {
 		cancel()
@@ -274,7 +279,7 @@ func (s *HeyService) CreateEvent(
 	creatorID uuid.UUID,
 	data []byte,
 ) (uuid.UUID, error) {
-	ctx, cancel := context.WithTimeout(ctx, time.Millisecond*100)
+	ctx, cancel := context.WithTimeout(ctx, time.Millisecond*TimeoutDefault)
 	done := make(chan error, 1)
 	defer func() {
 		cancel()
@@ -322,6 +327,17 @@ func (s *HeyService) CreateEvent(
 		if err != nil {
 			return
 		}
+
+		err = s.eventsRepo.Threadline(
+			ctx,
+			currentThread.ChannelID(),
+			threadID,
+			newEventID,
+		)
+
+		if err != nil {
+			return
+		}
 	}()
 
 	select {
@@ -335,4 +351,22 @@ func (s *HeyService) CreateEvent(
 		}
 		return newEventID, tx.Commit()
 	}
+}
+
+func (s *HeyService) FindEvents(
+	ctx context.Context,
+	threadID uuid.UUID,
+	cursorStr string,
+	perPage int,
+) ([]interfaces.Event, string, error) {
+
+	ctx = context.WithValue(ctx, "__conn", s.conn)
+
+	return s.eventsRepo.FindEventsWithProvider(
+		ctx,
+		threadID,
+		cursorStr,
+		perPage,
+		s.eventsRepo,
+	)
 }

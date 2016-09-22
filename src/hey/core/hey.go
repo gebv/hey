@@ -32,6 +32,38 @@ type HeyService struct {
 // interfaces
 
 type EventRepository interface {
+	Event(
+		ctx context.Context,
+		eventID uuid.UUID,
+	) (interfaces.Event, error)
+
+	FindEvents(
+		ctx context.Context,
+		threadID uuid.UUID,
+		cursorStr string,
+		perPage int,
+	) ([]interfaces.Event, string, error)
+
+	FindEventsWithProvider(
+		ctx context.Context,
+		threadID uuid.UUID,
+		cursorStr string,
+		perPage int,
+		provider interfaces.EventProvider,
+	) ([]interfaces.Event, string, error)
+
+	Threadline(
+		ctx context.Context,
+		channelID,
+		threadID,
+		eventID uuid.UUID,
+	) error
+
+	DeleteThreadline(
+		ctx context.Context,
+		eventID uuid.UUID,
+	) error
+
 	SetBranchThreadID(
 		ctx context.Context,
 		eventID,

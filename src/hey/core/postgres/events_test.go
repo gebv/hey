@@ -3,8 +3,10 @@ package postgres
 import (
 	"context"
 	"hey/core"
+	"hey/core/interfaces"
 	"hey/storage/postgres"
 	"hey/utils"
+	"strconv"
 	"testing"
 
 	"github.com/satori/go.uuid"
@@ -108,7 +110,7 @@ func TestHeyService_simple_workspace(t *testing.T) {
 }
 
 func TestHeyService_simple_NewEvent(t *testing.T) {
-	db.Exec(`DELETE FROM events;`)
+	// db.Exec(`DELETE FROM events;`)
 
 	repoThreads := &postgres.ThreadRepository{}
 	repoChannels := &postgres.ChannelRepository{}
@@ -213,7 +215,7 @@ func TestHeyService_simple_NewEvent(t *testing.T) {
 }
 
 func TestHeyService_simple_NewBranchEvent(t *testing.T) {
-	db.Exec(`DELETE FROM events;`)
+	// db.Exec(`DELETE FROM events;`)
 
 	repoThreads := &postgres.ThreadRepository{}
 	repoChannels := &postgres.ChannelRepository{}
@@ -436,4 +438,115 @@ func TestHeyService_simple_NodalEvent(t *testing.T) {
 	assert.Equal(t, gotParentThreadID, uuid.Nil)
 	assert.Equal(t, gotParentEventID, uuid.Nil)
 	assert.Equal(t, gotBranchThreadID, branchThreadID)
+}
+
+func TestHeyService_simple_SearchEvents(t *testing.T) {
+	// db.Exec(`DELETE FROM events;`)
+
+	repoThreads := &postgres.ThreadRepository{}
+	repoChannels := &postgres.ChannelRepository{}
+	repoEvents := &postgres.EventRepository{}
+
+	var clientID = uuid.NewV4()
+	var creatorID = uuid.NewV4()
+	var owners = []uuid.UUID{
+		creatorID,
+	}
+
+	ctx := context.Background()
+	ctx = context.WithValue(ctx, "ClientID", clientID)
+	// ctx = context.WithValue(context.Background(), "__conn", db)
+
+	hey := core.NewHeyService(
+		db,
+		repoEvents,
+		repoThreads,
+		repoChannels,
+	)
+
+	channelID, threadID, err := hey.CreateChannel(
+		ctx,
+		owners,
+	)
+	assert.NoError(t, err)
+	assert.NotEqual(t, channelID, uuid.Nil)
+	assert.NotEqual(t, threadID, uuid.Nil)
+
+	// Create nodal event
+	branchThreadID, nodalEventID, err := hey.CreateNodalEvent(
+		ctx,
+		threadID,
+		owners,
+		creatorID,
+	)
+	assert.NoError(t, err)
+	assert.NotEqual(t, branchThreadID, uuid.Nil)
+	assert.NotEqual(t, nodalEventID, uuid.Nil)
+
+	// ticker := time.Tick(time.Millisecond * 10)
+	totalEvents := 10
+	eventIDS := make([]uuid.UUID, totalEvents)
+
+	for index := 0; index <= totalEvents-1; index++ {
+		// select {
+		// case <-ticker:
+		// }
+
+		// new event
+		newEventID, err := hey.CreateEvent(
+			ctx,
+			branchThreadID,
+			creatorID,
+			[]byte("hello machine #"+strconv.Itoa(index)),
+		)
+		assert.NoError(t, err)
+		assert.NotEqual(t, newEventID, uuid.Nil)
+		eventIDS[index] = newEventID
+	}
+
+	// reverse ids
+	for i, j := 0, len(eventIDS)-1; i < j; i, j = i+1, j-1 {
+		eventIDS[i], eventIDS[j] = eventIDS[j], eventIDS[i]
+	}
+
+	// Search
+	var perPage = 3
+	var events = []interfaces.Event{}
+	var cursor = ""
+	var countItemsLastPage = totalEvents - (perPage * (totalEvents / perPage))
+
+	for page := 0; page <= (totalEvents / perPage); page++ {
+		events, cursor, err = hey.FindEvents(
+			ctx,
+			branchThreadID,
+			cursor,
+			perPage,
+		)
+
+		assert.NoError(t, err)
+		assert.NotEmpty(t, cursor)
+
+		var _perPage = perPage
+
+		if page+1 > totalEvents/perPage {
+			// for last page
+			_perPage = countItemsLastPage
+		}
+
+		// check items per page
+		assert.Equal(t, len(events), _perPage)
+
+		for i := 0; i < _perPage; i++ {
+			// t.Log(i, len(events), page*perPage+i)
+			item := events[i]
+			expectedItemID := eventIDS[page*perPage+i]
+			assert.Equal(
+				t,
+				item.EventID(),
+				eventIDS[page*perPage+i],
+				expectedItemID,
+			)
+		}
+	}
+
 }

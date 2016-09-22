@@ -55,20 +55,20 @@ var SchemaBase = []string{
     )`,
 	`CREATE INDEX IF NOT EXISTS threadline_created_index ON threadline(
         client_id asc, 
-        channel_id asc, 
+--        channel_id asc, 
         thread_id asc, 
         created_at DESC, 
         event_id ASC
         )`,
 	`CREATE TABLE IF NOT EXISTS thread_watchers (
-        client_id uuid,
-        thread_id uuid,
-        user_id uuid,
-        
-        unread int8,
+	    client_id uuid,
+	    thread_id uuid,
+	    user_id uuid,
 
-        CONSTRAINT uniq_client_thread_watchers_idx UNIQUE (client_id, thread_id, user_id)
-    )`,
+	    unread int8,
+
+	    CONSTRAINT uniq_client_thread_watchers_idx UNIQUE (client_id, thread_id, user_id)
+	)`,
 	`CREATE TABLE IF NOT EXISTS thread_counters (
         client_id uuid,
         thread_id uuid,
@@ -78,14 +78,14 @@ var SchemaBase = []string{
         CONSTRAINT uniq_client_thread_counter_idx UNIQUE (client_id, thread_id)
     )`,
 	`CREATE TABLE IF NOT EXISTS channel_watchers (
-        client_id uuid,
-        channel_id uuid,
-        user_id uuid,
-        
-        unread int8,
+	    client_id uuid,
+	    channel_id uuid,
+	    user_id uuid,
 
-        CONSTRAINT uniq_client_channel_watchers_idx UNIQUE (client_id, channel_id, user_id)
-    )`,
+	    unread int8,
+
+	    CONSTRAINT uniq_client_channel_watchers_idx UNIQUE (client_id, channel_id, user_id)
+	)`,
 	`CREATE TABLE IF NOT EXISTS channel_counters (
         client_id uuid,
         channel_id uuid,
