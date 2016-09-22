@@ -5,7 +5,7 @@ go:
   - 1.5.2
 
 addons:
-  postgresql: "9.4"
+  postgresql: "9.5"
 
 services:
   - postgresql
@@ -14,9 +14,10 @@ install: make vendor_get
 
 before_script:
   - psql -V
-  - psql -c 'create database hey;' -U postgres
-  - psql -a -d hey -f schema/v0.1.sql -U postgres
-  - cp config/config.json.travis config/config.json
+  - psql -c 'create database dbname;' -U postgres
+  # - psql -a -d hey -f schema/v0.1.sql -U postgres
+  # - cp config/config.json.travis config/config.json
 
 script:
+  - source .env.travis
   - make test

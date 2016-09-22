@@ -2,6 +2,8 @@ package postgres
 
 import (
 	"hey/storage"
+	"os"
+	"strconv"
 
 	pg "gopkg.in/jackc/pgx.v2"
 )
@@ -11,7 +13,35 @@ var (
 	_ storage.BeginTX = (*Conn)(nil)
 	_ storage.TX      = (*ConnTx)(nil)
 	_ storage.DB      = (*ConnTx)(nil)
+
+	DefaultPort     uint16 = 5432
+	DefaultMaxConns int    = 10
 )
+
+func SetupPgFromENV() (storage.DB, error) {
+	host := os.Getenv("DB_HOST")
+	name := os.Getenv("DB_NAME")
+	user := os.Getenv("DB_USER")
+	pwd := os.Getenv("DB_PWD")
+	_port, err := strconv.Atoi(os.Getenv("DB_PORT"))
+	port := DefaultPort
+	if err == nil {
+		port = uint16(_port)
+	}
+	_maxConns, err := strconv.Atoi(os.Getenv("DB_MAXCONNS"))
+	maxConns := DefaultMaxConns
+	if err == nil {
+		maxConns = _maxConns
+	}
+	return SetupPg(
+		host,
+		name,
+		user,
+		pwd,
+		port,
+		maxConns,
+	)
+}
 
 // SetupPg
 func SetupPg(

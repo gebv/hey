@@ -11,14 +11,7 @@ var db storage.DB
 
 func TestMain(m *testing.M) {
 	var err error
-	db, err = SetupPg(
-		"localhost",
-		"dbname",
-		"dbuser",
-		"dbuserpassword",
-		5432,
-		10,
-	)
+	db, err = SetupPgFromENV()
 
 	if err != nil {
 		log.Panicln(err)

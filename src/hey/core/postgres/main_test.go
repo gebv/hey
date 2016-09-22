@@ -2,7 +2,7 @@ package postgres
 
 import (
 	"hey/storage"
-	"hey/storage/postgres"
+	spostgres "hey/storage/postgres"
 	"log"
 	"os"
 	"testing"
@@ -12,20 +12,13 @@ var db storage.DB
 
 func TestMain(m *testing.M) {
 	var err error
-	db, err = postgres.SetupPg(
-		"localhost",
-		"dbname",
-		"dbuser",
-		"dbuserpassword",
-		5432,
-		10,
-	)
+	db, err = spostgres.SetupPgFromENV()
 
 	if err != nil {
 		log.Panicln(err)
 	}
 
-	err = storage.ExecQueries(db, postgres.SchemaBase)
+	err = storage.ExecQueries(db, spostgres.SchemaBase)
 	if err != nil {
 		log.Panicln("[FAIL]", "create schema", err)
 	}
