@@ -4,6 +4,8 @@
 
 [![Build Status](https://travis-ci.org/gebv/hey.svg?branch=master)](https://travis-ci.org/gebv/hey)
 
+[Wiki architecture](https://github.com/gebv/hey/wiki#architecture)
+
 Система комментариев.
 Механизм установки комментариев на странице аналогичный Disqus.
 
