@@ -1,55 +1,31 @@
 
-GOPATH := ${PWD}:${PWD}/vendor
-PATH := ${PATH}:${PWD}/vendor/bin
+BUILD_DATE = `date -u +%Y-%m-%dT%H:%M:%S%z`
+BUILD_HASH = `git rev-parse HEAD 2>/dev/null || echo "???"`
+BUILD_ID = ${CI_BUILD_ID}  
+NAME = ${CI_PROJECT_NAME}
 
-VERSION := "0.1.DEV"
-BUILDSTAMP :=`date +%FT%T%z`
-GITHASH := `git rev-parse HEAD`
+FLAGS ?= -a --installsuffix cgo -ldflags \
+    "-s -X 'config.BuildDate=$(BUILD_DATE)' \
+    -X config.BuildHash=$(BUILD_HASH) \
+    -X config.BuildID=$(BUILD_ID)" \
+    src/cmd/p356/main.go
 
-# GOOS:="linux"
-# GOARCH:="386"
+build: vendor
+	GOOS="linux" GOARCH="amd64" GOPATH=${GOPATH}:${PWD} CGO_ENABLED=0 go build -o bin/${NAME} -v ${FLAGS}
+.PHONY: build
 
-fmt:
-	GOPATH=$(GOPATH) go fmt ./src/...
+vendor:
+	go get -v github.com/stretchr/testify/assert \
+		gopkg.in/jackc/pgx.v2 \
+		github.com/satori/go.uuid
+.PHONY: vendor
 
-vet:
-	GOPATH=$(GOPATH) go vet ./src/...
+test: vendor
+	GOPATH=${GOPATH}:${PWD} go test -v \
+		-bench=. -benchmem \
+		-run=. ./src/...
+.PHONY: test
 
-build:
-	GOPATH=$(GOPATH) PATH=$(PATH) go generate ./src/...
-	GOPATH=$(GOPATH) go build -ldflags "-X utils.GitHash=$(GITHASH) -X utils.BuildDate=$(BUILDSTAMP) -X utils.Version=$(VERSION)" -v -o ./bin/app.bin ./src
-
-run:
-	GOPATH=$(GOPATH) go run -ldflags "-X utils.GitHash=$(GITHASH) -X utils.BuildDate=$(BUILDSTAMP) -X utils.Version=$(VERSION)" ./src/main.go -stderrthreshold=INFO -v=2
-
-test:
-	# GOPATH=$(GOPATH) go test ./src/model/...
-	GOPATH=$(GOPATH) go test ./src/store/...  -test.bench=. -test.benchmem testing: warning: no tests to run
-	# GOPATH=$(GOPATH) go test ./src/utils/...
-	# GOPATH=$(GOPATH) go test ./src/api/...
-
-vendor_clean:
-	# find ./src -type d -not -name '*.run' | xargs rm
-	rm -Rf ./vendor
-	mkdir -p ./vendor
-	rm -Rf ./bin
-	mkdir -p ./bin
-	rm -Rf ./pkg
-
-vendor_update: vendor_get
-	rm -rf `find ./vendor -type d -name .git` \
-	&& rm -rf `find ./vendor -type d -name .hg` \
-	&& rm -rf `find ./vendor -type d -name .bzr` \
-	&& rm -rf `find ./vendor -type d -name .svn`
-
-vendor_get: vendor_clean
-	GOPATH=${PWD}/vendor go get -u -v \
-		github.com/gorilla/mux \
-		github.com/golang/glog \
-		github.com/lib/pq \
-		github.com/RangelReale/osin \
-		github.com/gebv/goco \
-		gopkg.in/bluesuncorp/validator.v8 \
-		github.com/ory-am/osin-storage/storage/postgres \
-		github.com/jackc/pgx \
-		github.com/satori/go.uuid \
+dev-build:
+	docker build -t "local/${NAME}" -f dev.Dockerfile .
+.PHONY: dev-build

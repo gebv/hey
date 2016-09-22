@@ -2,3 +2,5 @@ bin
 config.json
 vendor
 pkg
+_*
+.env
