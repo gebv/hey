@@ -1,4 +1,4 @@
-
+sudo: required
 language: go
 
 go:
@@ -10,7 +10,7 @@ addons:
 services:
   - postgresql
 
-install: make vendor_get
+install: make vendor
 
 before_script:
   - psql -V
