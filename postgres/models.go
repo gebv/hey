@@ -1,17 +1,11 @@
 package postgres
 
 import (
-	"hey/core/interfaces"
-	"hey/utils"
+	"github.com/gebv/hey/utils"
 
 	"time"
 
 	uuid "github.com/satori/go.uuid"
-)
-
-var (
-	_ interfaces.Thread = (*thread)(nil)
-	_ interfaces.Event  = (*event)(nil)
 )
 
 // Thread

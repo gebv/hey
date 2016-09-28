@@ -14,10 +14,9 @@ services:
 install: make vendor
 
 before_script:
+  - go env
   - psql -V
   - psql -c 'create database dbname;' -U postgres
-  # - psql -a -d hey -f schema/v0.1.sql -U postgres
-  # - cp config/config.json.travis config/config.json
 
 script:
   - source .env.travis

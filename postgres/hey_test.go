@@ -2,36 +2,45 @@ package postgres
 
 import (
 	"context"
-	"hey/core"
-	"hey/core/interfaces"
-	"hey/storage/postgres"
-	"hey/utils"
+	"log"
+	"os"
 	"strconv"
 	"testing"
 
-	"github.com/satori/go.uuid"
+	_hey "github.com/gebv/hey"
+
+	"github.com/gebv/hey/utils"
+	uuid "github.com/satori/go.uuid"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestHeyService_simple_workspace(t *testing.T) {
-	repoThreads := &postgres.ThreadRepository{}
-	repoChannels := &postgres.ChannelRepository{}
-	repoEvents := &postgres.EventRepository{}
+// drop table accounts, balance_changes, channel_counters, channel_watchers, channels, events, orders, thread_counters, thread_watchers, threadline, threads, transactions, users;
 
-	var clientID = uuid.NewV4()
-	var owners = []uuid.UUID{
-		uuid.NewV4(),
-	}
+func ContextWithClientID() (context.Context, uuid.UUID) {
+	clientID := uuid.NewV4()
+	return context.WithValue(
+			context.Background(),
+			clientIDContextKey,
+			clientID),
+		clientID
+}
 
-	ctx := context.WithValue(context.Background(), "ClientID", clientID)
+func TestHey_createChannel(t *testing.T) {
 
-	hey := core.NewHeyService(
+	// ------------------------------------
+
+	hey := NewService(
 		db,
-		repoEvents,
-		repoThreads,
-		repoChannels,
+		log.New(os.Stderr, "[test hey]", 1),
 	)
 
+	ctx, clientID := ContextWithClientID()
+	user1 := uuid.NewV4()
+	user2 := uuid.NewV4()
+	owners := []uuid.UUID{
+		user1,
+		user2,
+	}
 	channelID, threadID, err := hey.CreateChannel(
 		ctx,
 		owners,
@@ -40,15 +49,9 @@ func TestHeyService_simple_workspace(t *testing.T) {
 	assert.NotEqual(t, channelID, uuid.Nil)
 	assert.NotEqual(t, threadID, uuid.Nil)
 
-	// check root thread
-	ctx = context.WithValue(ctx, "__conn", db)
+	// ------------------------------------
 
-	thread, err := repoThreads.FindThread(ctx, threadID)
-	assert.NoError(t, err)
-	assert.Equal(t, thread.ThreadID(), threadID)
-	assert.Equal(t, thread.ChannelID(), channelID)
-
-	// check in the database
+	// check data
 
 	var gotChannelID,
 		gotClientID,
@@ -109,39 +112,30 @@ func TestHeyService_simple_workspace(t *testing.T) {
 	assert.Equal(t, gotParentThreadID, uuid.Nil)
 }
 
-func TestHeyService_simple_NewEvent(t *testing.T) {
-	// db.Exec(`DELETE FROM events;`)
-
-	repoThreads := &postgres.ThreadRepository{}
-	repoChannels := &postgres.ChannelRepository{}
-	repoEvents := &postgres.EventRepository{}
-
-	var clientID = uuid.NewV4()
-	var creatorID = uuid.NewV4()
-	var owners = []uuid.UUID{
-		creatorID,
-	}
-
-	ctx := context.Background()
-	ctx = context.WithValue(ctx, "ClientID", clientID)
-	// ctx = context.WithValue(context.Background(), "__conn", db)
-
-	hey := core.NewHeyService(
+func TestHey_newEventInThread(t *testing.T) {
+	hey := NewService(
 		db,
-		repoEvents,
-		repoThreads,
-		repoChannels,
+		log.New(os.Stderr, "[test hey]", 1),
 	)
 
+	ctx, clientID := ContextWithClientID()
+	user1 := uuid.NewV4()
+	user2 := uuid.NewV4()
+	owners := []uuid.UUID{
+		user1,
+		user2,
+	}
 	channelID, threadID, err := hey.CreateChannel(
 		ctx,
 		owners,
 	)
-	assert.NoError(t, err)
-	assert.NotEqual(t, channelID, uuid.Nil)
-	assert.NotEqual(t, threadID, uuid.Nil)
+
+	// ------------------------
+
+	creatorID := uuid.NewV4()
 
 	// Create nodal event
+
 	branchThreadID, nodalEventID, err := hey.CreateNodalEvent(
 		ctx,
 		threadID,
@@ -152,18 +146,21 @@ func TestHeyService_simple_NewEvent(t *testing.T) {
 	assert.NotEqual(t, branchThreadID, uuid.Nil)
 	assert.NotEqual(t, nodalEventID, uuid.Nil)
 
-	// Create new event
+	// Create new event in existing thread
+	message := []byte("hello from machine")
+
 	newEventID, err := hey.CreateEvent(
 		ctx,
 		branchThreadID,
 		creatorID,
-		[]byte("hello machine"),
+		message,
 	)
 	assert.NoError(t, err)
 	assert.NotEqual(t, newEventID, uuid.Nil)
 
-	// check in the database
+	// ------------------------------------
 
+	// check data
 	var gotEventID,
 		gotClientID,
 		gotThreadID,
@@ -208,36 +205,25 @@ func TestHeyService_simple_NewEvent(t *testing.T) {
 	assert.Equal(t, gotThreadID, branchThreadID)
 	assert.Equal(t, gotChannelID, channelID)
 	assert.Equal(t, gotCreatorID, creatorID)
-	assert.Equal(t, gotData, []byte("hello machine"))
+	assert.Equal(t, gotData, message)
 	assert.Equal(t, gotParentThreadID, threadID)
 	assert.Equal(t, gotParetnEventID, nodalEventID)
 	assert.Equal(t, gotBranchThreadID, uuid.Nil)
 }
 
-func TestHeyService_simple_NewBranchEvent(t *testing.T) {
-	// db.Exec(`DELETE FROM events;`)
-
-	repoThreads := &postgres.ThreadRepository{}
-	repoChannels := &postgres.ChannelRepository{}
-	repoEvents := &postgres.EventRepository{}
-
-	var clientID = uuid.NewV4()
-	var creatorID = uuid.NewV4()
-	var owners = []uuid.UUID{
-		creatorID,
-	}
-
-	ctx := context.Background()
-	ctx = context.WithValue(ctx, "ClientID", clientID)
-	// ctx = context.WithValue(context.Background(), "__conn", db)
-
-	hey := core.NewHeyService(
+func TestHey_newBranchEvent(t *testing.T) {
+	hey := NewService(
 		db,
-		repoEvents,
-		repoThreads,
-		repoChannels,
+		log.New(os.Stderr, "[test hey]", 1),
 	)
 
+	ctx, clientID := ContextWithClientID()
+	user1 := uuid.NewV4()
+	user2 := uuid.NewV4()
+	owners := []uuid.UUID{
+		user1,
+		user2,
+	}
 	channelID, threadID, err := hey.CreateChannel(
 		ctx,
 		owners,
@@ -247,6 +233,9 @@ func TestHeyService_simple_NewBranchEvent(t *testing.T) {
 	assert.NotEqual(t, threadID, uuid.Nil)
 
 	// Create nodal event
+
+	creatorID := uuid.NewV4()
+
 	branchThreadID, nodalEventID, err := hey.CreateNodalEvent(
 		ctx,
 		threadID,
@@ -257,39 +246,35 @@ func TestHeyService_simple_NewBranchEvent(t *testing.T) {
 	assert.NotEqual(t, branchThreadID, uuid.Nil)
 	assert.NotEqual(t, nodalEventID, uuid.Nil)
 
-	// Create new event
-	newEventID, err := hey.CreateEvent(
-		ctx,
-		branchThreadID,
-		creatorID,
-		[]byte("hello machine 1"),
-	)
-	assert.NoError(t, err)
-	assert.NotEqual(t, newEventID, uuid.Nil)
+	// Create new event in existing thread
+	messages := [][]byte{
+		[]byte("hello from machine #1"),
+		[]byte("hello from machine #2"),
+		[]byte("hello from machine #3"),
+	}
+	var messageIDs = make([]uuid.UUID, len(messages))
 
-	newEventID, err = hey.CreateEvent(
-		ctx,
-		branchThreadID,
-		creatorID,
-		[]byte("hello machine 2"),
-	)
-	assert.NoError(t, err)
-	assert.NotEqual(t, newEventID, uuid.Nil)
+	for index, message := range messages {
+		newEventID, err := hey.CreateEvent(
+			ctx,
+			branchThreadID,
+			creatorID,
+			message,
+		)
+		assert.NoError(t, err)
+		assert.NotEqual(t, newEventID, uuid.Nil)
 
-	newEventID, err = hey.CreateEvent(
-		ctx,
-		branchThreadID,
-		creatorID,
-		[]byte("hello machine 3"),
-	)
-	assert.NoError(t, err)
-	assert.NotEqual(t, newEventID, uuid.Nil)
+		messageIDs[index] = newEventID
+	}
 
-	//
+	// ------------------------------------
+
+	eventID := messageIDs[1]
+
 	newBranchThreadID, newBranchEventid, err := hey.CreateNewBranchEvent(
 		ctx,
 		branchThreadID,
-		newEventID,
+		eventID, // message #2
 		owners,
 		creatorID,
 		[]byte("first event in a new thread"),
@@ -298,7 +283,9 @@ func TestHeyService_simple_NewBranchEvent(t *testing.T) {
 	assert.NotEqual(t, newBranchThreadID, uuid.Nil)
 	assert.NotEqual(t, newBranchEventid, uuid.Nil)
 
-	// check in the database
+	// ------------------------------------
+
+	// check data
 
 	var gotBranchThreadID uuid.UUID
 
@@ -307,7 +294,7 @@ func TestHeyService_simple_NewBranchEvent(t *testing.T) {
 	FROM events
 	WHERE client_id = $1 AND event_id = $2`,
 		clientID,
-		newEventID,
+		eventID,
 	).Scan(
 		&gotBranchThreadID,
 	)
@@ -318,28 +305,19 @@ func TestHeyService_simple_NewBranchEvent(t *testing.T) {
 	assert.Equal(t, gotBranchThreadID, newBranchThreadID)
 }
 
-func TestHeyService_simple_NodalEvent(t *testing.T) {
-	repoThreads := &postgres.ThreadRepository{}
-	repoChannels := &postgres.ChannelRepository{}
-	repoEvents := &postgres.EventRepository{}
-
-	var clientID = uuid.NewV4()
-	var creatorID = uuid.NewV4()
-	var owners = []uuid.UUID{
-		creatorID,
-	}
-
-	ctx := context.Background()
-	ctx = context.WithValue(ctx, "ClientID", clientID)
-	// ctx = context.WithValue(context.Background(), "__conn", db)
-
-	hey := core.NewHeyService(
+func TestHey_simple_nodalEvent(t *testing.T) {
+	hey := NewService(
 		db,
-		repoEvents,
-		repoThreads,
-		repoChannels,
+		log.New(os.Stderr, "[test hey]", 1),
 	)
 
+	ctx, clientID := ContextWithClientID()
+	user1 := uuid.NewV4()
+	user2 := uuid.NewV4()
+	owners := []uuid.UUID{
+		user1,
+		user2,
+	}
 	channelID, threadID, err := hey.CreateChannel(
 		ctx,
 		owners,
@@ -348,7 +326,10 @@ func TestHeyService_simple_NodalEvent(t *testing.T) {
 	assert.NotEqual(t, channelID, uuid.Nil)
 	assert.NotEqual(t, threadID, uuid.Nil)
 
-	// Create nodal event
+	// ------------------------------------
+
+	creatorID := uuid.NewV4()
+
 	branchThreadID, nodalEventID, err := hey.CreateNodalEvent(
 		ctx,
 		threadID,
@@ -359,7 +340,9 @@ func TestHeyService_simple_NodalEvent(t *testing.T) {
 	assert.NotEqual(t, branchThreadID, uuid.Nil)
 	assert.NotEqual(t, nodalEventID, uuid.Nil)
 
-	// check in the database
+	// ------------------------------------
+
+	// check data
 
 	var gotThreadID,
 		gotClientID,
@@ -440,30 +423,19 @@ func TestHeyService_simple_NodalEvent(t *testing.T) {
 	assert.Equal(t, gotBranchThreadID, branchThreadID)
 }
 
-func TestHeyService_simple_SearchEvents(t *testing.T) {
-	// db.Exec(`DELETE FROM events;`)
-
-	repoThreads := &postgres.ThreadRepository{}
-	repoChannels := &postgres.ChannelRepository{}
-	repoEvents := &postgres.EventRepository{}
-
-	var clientID = uuid.NewV4()
-	var creatorID = uuid.NewV4()
-	var owners = []uuid.UUID{
-		creatorID,
-	}
-
-	ctx := context.Background()
-	ctx = context.WithValue(ctx, "ClientID", clientID)
-	// ctx = context.WithValue(context.Background(), "__conn", db)
-
-	hey := core.NewHeyService(
+func TestHey_simple_search(t *testing.T) {
+	hey := NewService(
 		db,
-		repoEvents,
-		repoThreads,
-		repoChannels,
+		log.New(os.Stderr, "[test hey]", 1),
 	)
 
+	ctx, _ := ContextWithClientID()
+	user1 := uuid.NewV4()
+	user2 := uuid.NewV4()
+	owners := []uuid.UUID{
+		user1,
+		user2,
+	}
 	channelID, threadID, err := hey.CreateChannel(
 		ctx,
 		owners,
@@ -472,7 +444,8 @@ func TestHeyService_simple_SearchEvents(t *testing.T) {
 	assert.NotEqual(t, channelID, uuid.Nil)
 	assert.NotEqual(t, threadID, uuid.Nil)
 
-	// Create nodal event
+	creatorID := uuid.NewV4()
+
 	branchThreadID, nodalEventID, err := hey.CreateNodalEvent(
 		ctx,
 		threadID,
@@ -483,14 +456,11 @@ func TestHeyService_simple_SearchEvents(t *testing.T) {
 	assert.NotEqual(t, branchThreadID, uuid.Nil)
 	assert.NotEqual(t, nodalEventID, uuid.Nil)
 
-	// ticker := time.Tick(time.Millisecond * 10)
+	// create events
 	totalEvents := 10
 	eventIDS := make([]uuid.UUID, totalEvents)
 
 	for index := 0; index <= totalEvents-1; index++ {
-		// select {
-		// case <-ticker:
-		// }
 
 		// new event
 		newEventID, err := hey.CreateEvent(
@@ -509,22 +479,27 @@ func TestHeyService_simple_SearchEvents(t *testing.T) {
 		eventIDS[i], eventIDS[j] = eventIDS[j], eventIDS[i]
 	}
 
+	// ------------------------------------
+
 	// Search
+	var watcherID = uuid.NewV4()
 	var perPage = 3
-	var events = []interfaces.Event{}
+	var searchResult _hey.SearchResult
 	var cursor = ""
 	var countItemsLastPage = totalEvents - (perPage * (totalEvents / perPage))
 
 	for page := 0; page <= (totalEvents / perPage); page++ {
-		events, cursor, err = hey.FindEvents(
+		searchResult, err = hey.FindEvents(
 			ctx,
+			watcherID,
 			branchThreadID,
 			cursor,
 			perPage,
 		)
+		cursor = searchResult.Cursor() // save for next query
 
 		assert.NoError(t, err)
-		assert.NotEmpty(t, cursor)
+		// assert.NotEmpty(t, cursor)
 
 		var _perPage = perPage
 
@@ -534,19 +509,25 @@ func TestHeyService_simple_SearchEvents(t *testing.T) {
 		}
 
 		// check items per page
-		assert.Equal(t, len(events), _perPage)
+		assert.Equal(t, len(searchResult.Events()), _perPage)
 
 		for i := 0; i < _perPage; i++ {
-			// t.Log(i, len(events), page*perPage+i)
-			item := events[i]
+			item := searchResult.Events()[i]
+
+			t.Log(i, len(searchResult.Events()), page*perPage+i)
+
 			expectedItemID := eventIDS[page*perPage+i]
 			assert.Equal(
 				t,
-				item.EventID(),
-				eventIDS[page*perPage+i],
+				uuid.Equal(
+					eventIDS[page*perPage+i],
+					item.EventID(),
+				),
+				true,
+				"expected %v, got %v",
 				expectedItemID,
+				item.EventID(),
 			)
 		}
 	}
-
 }

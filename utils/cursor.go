@@ -2,8 +2,9 @@ package utils
 
 import (
 	"errors"
-	"hey/core/interfaces"
 	"time"
+
+	"github.com/gebv/hey"
 
 	uuid "github.com/satori/go.uuid"
 )
@@ -32,7 +33,7 @@ func NewCursorFromSource(eventID uuid.UUID, createdAt time.Time) CursorEvents {
 	return CursorEvents(Base64(res))
 }
 
-func NewCursorEventsFromEvent(e interfaces.Event) CursorEvents {
+func NewCursorEventsFromEvent(e hey.Event) CursorEvents {
 
 	return NewCursorFromSource(e.EventID(), e.CreatedAt())
 }

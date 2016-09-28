@@ -16,7 +16,7 @@ func getUUIDFromContext(key string, ctx context.Context) uuid.UUID {
 		return id
 	}
 
-	log.Panicln("[FAIL]", "the context does not contain information about the context key", key)
+	log.Panicln("[FAIL]", "the context does not contain value about the context key", key)
 
 	return uuid.Nil
 }

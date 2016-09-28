@@ -15,6 +15,10 @@ func NewUUID4() string {
 	return strings.Replace(uuid.NewV4().String(), "-", "", -1)
 }
 
+func UUIDSFrom(arr []uuid.UUID) UUIDS {
+	return UUIDS(arr)
+}
+
 type UUIDS []uuid.UUID
 
 func (m *UUIDS) Scan(value interface{}) error {
