@@ -5,4 +5,5 @@
 [![Coverage Status](http://img.shields.io/coveralls/gebv/hey.svg?style=flat-square)](https://coveralls.io/r/gebv/hey)
 
 [see data structure](https://github.com/gebv/hey/wiki#architecture)
+
 [see example of usage](https://github.com/gebv/hey/blob/master/postgres/hey_test.go)
