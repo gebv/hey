@@ -12,4 +12,4 @@
 ## change log
 
 * added ability to specify the name of the thread
-* added ability to search the events by the thread names
+* added ability to search the events by the thread names ([see example](https://github.com/gebv/hey/blob/master/postgres/hey_test.go#L549))
