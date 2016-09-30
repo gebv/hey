@@ -4,8 +4,32 @@ import (
 	"context"
 	"time"
 
+	"github.com/gebv/hey/utils"
 	uuid "github.com/satori/go.uuid"
 )
+
+func (s *Service) CreateChannelName(
+	ctx context.Context,
+	name string,
+	userIDs []uuid.UUID,
+) (uuid.UUID, uuid.UUID, error) {
+	var channelID = uuid.NewV4()
+	var rootThreadID = uuid.NewV4()
+	var clientID = ClientIDFromContext(ctx)
+
+	if err := utils.ValidName(name); err != nil {
+		return uuid.Nil, uuid.Nil, err
+	}
+
+	return s.createChannel(
+		ctx,
+		clientID,
+		channelID,
+		rootThreadID,
+		name,
+		userIDs,
+	)
+}
 
 func (s *Service) CreateChannel(
 	ctx context.Context,
@@ -14,6 +38,27 @@ func (s *Service) CreateChannel(
 	var channelID = uuid.NewV4()
 	var rootThreadID = uuid.NewV4()
 	var clientID = ClientIDFromContext(ctx)
+
+	return s.createChannel(
+		ctx,
+		clientID,
+		channelID,
+		rootThreadID,
+		channelID.String(),
+		userIDs,
+	)
+}
+
+// private
+
+func (s *Service) createChannel(
+	ctx context.Context,
+	clientID,
+	channelID,
+	rootThreadID uuid.UUID,
+	name string,
+	userIDs []uuid.UUID,
+) (uuid.UUID, uuid.UUID, error) {
 
 	ctx, cancel := context.WithTimeout(ctx, time.Millisecond*TimeoutDefault)
 	done := make(chan error, 1)
@@ -35,10 +80,11 @@ func (s *Service) CreateChannel(
 			return
 		}
 
-		err = s.channels.CreateChannel(
+		err = s.channels.CreateChannelWithName(
 			tx,
 			clientID,
 			channelID,
+			name,
 			rootThreadID,
 			userIDs,
 		)
@@ -49,10 +95,11 @@ func (s *Service) CreateChannel(
 			return
 		}
 
-		err = s.threads.CreateThread(
+		err = s.threads.CreateThreadWithName(
 			tx,
 			clientID,
 			rootThreadID,
+			name,
 			channelID,
 			uuid.Nil,
 			uuid.Nil,

@@ -8,6 +8,41 @@ import (
 	uuid "github.com/satori/go.uuid"
 )
 
+// ChannelID
+
+type channel struct {
+	clientID     uuid.UUID
+	channelID    uuid.UUID
+	owners       utils.UUIDS
+	rootThreadID uuid.UUID
+	createdAt    time.Time
+	updatedAt    time.Time
+}
+
+func (c channel) ClientID() uuid.UUID {
+	return c.clientID
+}
+
+func (c channel) ChannelID() uuid.UUID {
+	return c.channelID
+}
+
+func (c channel) Owners() []uuid.UUID {
+	return []uuid.UUID(c.owners)
+}
+
+func (c channel) RootThreadID() uuid.UUID {
+	return c.rootThreadID
+}
+
+func (c channel) CreatedAt() time.Time {
+	return c.createdAt
+}
+
+func (c channel) UpdatedAt() time.Time {
+	return c.updatedAt
+}
+
 // Thread
 
 type thread struct {

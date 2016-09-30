@@ -4,18 +4,24 @@ var SchemaBase = []string{
 	`CREATE TABLE IF NOT EXISTS channels (
         channel_id uuid PRIMARY KEY,
         client_id uuid,
+
+        ext_id text NOT NULL,
         
         owners uuid[],
 
         root_thread_id uuid,
 
         created_at timestamp with time zone NOT NULL,
-        updated_at timestamp with time zone DEFAULT now() NOT NULL
+        updated_at timestamp with time zone DEFAULT now() NOT NULL,
+
+        CONSTRAINT uniq_client_channels_idx UNIQUE (client_id, ext_id)
     )`,
 	`CREATE TABLE IF NOT EXISTS threads (
         thread_id uuid PRIMARY KEY,
         client_id uuid,
         channel_id uuid,
+
+        ext_id text NOT NULL,
         
         owners uuid[],
 
@@ -23,7 +29,10 @@ var SchemaBase = []string{
 	    parent_thread_id uuid, -- в случае root = nil
 
         created_at timestamp with time zone NOT NULL,
-        updated_at timestamp with time zone DEFAULT now() NOT NULL
+        updated_at timestamp with time zone DEFAULT now() NOT NULL,
+        
+        CONSTRAINT uniq_client_threads_ids_idx UNIQUE (client_id, thread_id),
+        CONSTRAINT uniq_client_channel_threads_ext_ids_idx UNIQUE (client_id, channel_id, ext_id)
     )`,
 	`CREATE TABLE IF NOT EXISTS events (
         event_id uuid PRIMARY KEY,

@@ -4,6 +4,7 @@ import (
 
 	// "hey/core/interfaces"
 	// "hey/storage"
+
 	"time"
 
 	"github.com/gebv/hey"
@@ -15,6 +16,35 @@ import (
 
 type ThreadRepository struct {
 	db *pg.ConnPool
+}
+
+// FindThreadByName find a thread by name
+func (r *ThreadRepository) FindThreadByName(
+	clientID,
+	channelID uuid.UUID,
+	name string,
+) (hey.Thread, error) {
+	thread := thread{}
+
+	err := r.db.QueryRow(`
+			SELECT 
+				thread_id,
+				client_id, 
+				channel_id,
+				owners,
+				related_event_id,
+				parent_thread_id
+			FROM threads
+			WHERE client_id = $1 AND channel_id = $2 AND ext_id = $3
+		`, clientID, channelID, utils.HashText(name)).Scan(
+		&thread.threadID,
+		&thread.clientID,
+		&thread.channelID,
+		&thread.owners,
+		&thread.relatedEventID,
+		&thread.parentThreadID,
+	)
+	return &thread, err
 }
 
 // FindThread returns thread
@@ -45,6 +75,45 @@ func (r *ThreadRepository) FindThread(
 	return &thread, err
 }
 
+func (r *ThreadRepository) CreateThreadWithName(
+	tx *pg.Tx,
+	clientID,
+	threadID uuid.UUID,
+	threadName string,
+	channelID,
+	relatedEventID,
+	parentThreadID uuid.UUID,
+	owners []uuid.UUID,
+) error {
+	_, err := tx.Exec(`INSERT INTO threads (
+            thread_id,
+            client_id,
+            channel_id,
+
+			ext_id,
+
+            owners,
+
+            related_event_id,
+            parent_thread_id,
+
+            created_at,
+            updated_at
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+		threadID,
+		clientID,
+		channelID,
+		utils.HashText(threadName),
+		(&utils.UUIDS{}).FromArray(owners),
+		relatedEventID,
+		parentThreadID,
+		time.Now(),
+		time.Now(),
+	)
+
+	return err
+}
+
 // CreateThread create new thread
 // waiting in the context of the client ID, linked event and thread IDs
 func (r *ThreadRepository) CreateThread(
@@ -61,6 +130,8 @@ func (r *ThreadRepository) CreateThread(
             client_id,
             channel_id,
 
+			ext_id,
+
             owners,
 
             related_event_id,
@@ -68,10 +139,11 @@ func (r *ThreadRepository) CreateThread(
 
             created_at,
             updated_at
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
 		threadID,
 		clientID,
 		channelID,
+		utils.HashText(threadID.String()),
 		(&utils.UUIDS{}).FromArray(owners),
 		relatedEventID,
 		parentThreadID,

@@ -38,6 +38,7 @@ func NewService(
 		channels: &ChannelRepository{db},
 		threads:  &ThreadRepository{db},
 		events:   &EventRepository{db},
+		logger:   logger,
 	}
 }
 

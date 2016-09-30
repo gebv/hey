@@ -7,3 +7,9 @@
 [see data structure](https://github.com/gebv/hey/wiki#architecture)
 
 [see example of usage](https://github.com/gebv/hey/blob/master/postgres/hey_test.go)
+
+
+## change log
+
+* added ability to specify the name of the thread
+* added ability to search the events by the thread names

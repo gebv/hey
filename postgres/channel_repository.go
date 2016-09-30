@@ -3,6 +3,7 @@ package postgres
 import (
 	"time"
 
+	"github.com/gebv/hey"
 	"github.com/gebv/hey/utils"
 	"github.com/satori/go.uuid"
 
@@ -11,6 +12,95 @@ import (
 
 type ChannelRepository struct {
 	db *pg.ConnPool
+}
+
+func (r *ChannelRepository) FindChannelByName(
+	clientID uuid.UUID,
+	channelName string,
+) (hey.Channel, error) {
+	channel := channel{}
+	sql := `SELECT 
+			channel_id,
+			client_id,
+			owners,
+			root_thread_id,
+			created_at,
+			updated_at
+		FROM channels
+		WHERE client_id = $1 AND ext_id = $2`
+
+	err := r.db.QueryRow(
+		sql,
+		clientID,
+		utils.HashText(channelName),
+	).Scan(
+		&channel.channelID,
+		&channel.clientID,
+		&channel.owners,
+		&channel.rootThreadID,
+		&channel.createdAt,
+		&channel.updatedAt,
+	)
+
+	return channel, err
+}
+
+func (r *ChannelRepository) FindChannel(
+	clientID,
+	channelID uuid.UUID,
+) (hey.Channel, error) {
+	channel := channel{}
+	sql := `SELECT 
+			channel_id,
+			client_id,
+			owners,
+			root_thread_id,
+			created_at,
+			updated_at
+		FROM events
+		WHERE client_id = $1 AND channel_id = $2`
+
+	err := r.db.QueryRow(sql, clientID, channelID).Scan(
+		&channel.channelID,
+		&channel.clientID,
+		&channel.owners,
+		&channel.rootThreadID,
+		&channel.createdAt,
+		&channel.updatedAt,
+	)
+
+	return channel, err
+}
+
+func (r *ChannelRepository) CreateChannelWithName(
+	tx *pg.Tx,
+	clientID,
+	channelID uuid.UUID,
+	channelName string,
+	rootThreadID uuid.UUID,
+	owners []uuid.UUID,
+) error {
+	if tx == nil {
+		return ErrWantTx
+	}
+	_, err := tx.Exec(`INSERT INTO channels (
+            channel_id,
+			ext_id,
+            client_id,
+            owners,
+            root_thread_id,
+            created_at,
+            updated_at
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+		channelID,
+		utils.HashText(channelName),
+		clientID,
+		utils.UUIDSFrom(owners),
+		rootThreadID,
+		time.Now(),
+		time.Now(),
+	)
+	return err
 }
 
 // CreateChannel create new channel
@@ -27,13 +117,15 @@ func (r *ChannelRepository) CreateChannel(
 	}
 	_, err := tx.Exec(`INSERT INTO channels (
             channel_id,
+			ext_id,
             client_id,
             owners,
             root_thread_id,
             created_at,
             updated_at
-        ) VALUES ($1, $2, $3, $4, $5, $6)`,
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7)`,
 		channelID,
+		utils.HashText(channelID.String()),
 		clientID,
 		utils.UUIDSFrom(owners),
 		rootThreadID,

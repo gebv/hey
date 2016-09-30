@@ -16,7 +16,7 @@ import (
 
 // drop table accounts, balance_changes, channel_counters, channel_watchers, channels, events, orders, thread_counters, thread_watchers, threadline, threads, transactions, users;
 
-func ContextWithClientID() (context.Context, uuid.UUID) {
+func generateClientIDWithContext() (context.Context, uuid.UUID) {
 	clientID := uuid.NewV4()
 	return context.WithValue(
 			context.Background(),
@@ -34,7 +34,7 @@ func TestHey_createChannel(t *testing.T) {
 		log.New(os.Stderr, "[test hey]", 1),
 	)
 
-	ctx, clientID := ContextWithClientID()
+	ctx, clientID := generateClientIDWithContext()
 	user1 := uuid.NewV4()
 	user2 := uuid.NewV4()
 	owners := []uuid.UUID{
@@ -118,7 +118,7 @@ func TestHey_newEventInThread(t *testing.T) {
 		log.New(os.Stderr, "[test hey]", 1),
 	)
 
-	ctx, clientID := ContextWithClientID()
+	ctx, clientID := generateClientIDWithContext()
 	user1 := uuid.NewV4()
 	user2 := uuid.NewV4()
 	owners := []uuid.UUID{
@@ -217,7 +217,7 @@ func TestHey_newBranchEvent(t *testing.T) {
 		log.New(os.Stderr, "[test hey]", 1),
 	)
 
-	ctx, clientID := ContextWithClientID()
+	ctx, clientID := generateClientIDWithContext()
 	user1 := uuid.NewV4()
 	user2 := uuid.NewV4()
 	owners := []uuid.UUID{
@@ -311,7 +311,7 @@ func TestHey_simple_nodalEvent(t *testing.T) {
 		log.New(os.Stderr, "[test hey]", 1),
 	)
 
-	ctx, clientID := ContextWithClientID()
+	ctx, clientID := generateClientIDWithContext()
 	user1 := uuid.NewV4()
 	user2 := uuid.NewV4()
 	owners := []uuid.UUID{
@@ -429,15 +429,18 @@ func TestHey_simple_search(t *testing.T) {
 		log.New(os.Stderr, "[test hey]", 1),
 	)
 
-	ctx, _ := ContextWithClientID()
+	ctx, _ := generateClientIDWithContext()
 	user1 := uuid.NewV4()
 	user2 := uuid.NewV4()
 	owners := []uuid.UUID{
 		user1,
 		user2,
 	}
-	channelID, threadID, err := hey.CreateChannel(
+	var channelName = "my_custom_channel_name"
+
+	channelID, threadID, err := hey.CreateChannelName(
 		ctx,
+		channelName,
 		owners,
 	)
 	assert.NoError(t, err)
@@ -445,9 +448,10 @@ func TestHey_simple_search(t *testing.T) {
 	assert.NotEqual(t, threadID, uuid.Nil)
 
 	creatorID := uuid.NewV4()
-
-	branchThreadID, nodalEventID, err := hey.CreateNodalEvent(
+	var threadName = "my_custom_thread_name"
+	branchThreadID, nodalEventID, err := hey.CreateNodalEventWithThreadName(
 		ctx,
+		threadName,
 		threadID,
 		owners,
 		creatorID,
@@ -480,6 +484,8 @@ func TestHey_simple_search(t *testing.T) {
 	}
 
 	// ------------------------------------
+	// Search from thread ID
+	// ------------------------------------
 
 	// Search
 	var watcherID = uuid.NewV4()
@@ -496,9 +502,57 @@ func TestHey_simple_search(t *testing.T) {
 			cursor,
 			perPage,
 		)
+		assert.NoError(t, err)
 		cursor = searchResult.Cursor() // save for next query
 
-		assert.NoError(t, err)
+		var _perPage = perPage
+
+		if page+1 > totalEvents/perPage {
+			// for last page
+			_perPage = countItemsLastPage
+		}
+
+		// check items per page
+		assert.Equal(t, len(searchResult.Events()), _perPage, "%d, %#v", _perPage, searchResult.Events())
+
+		for i := 0; i < _perPage; i++ {
+			item := searchResult.Events()[i]
+
+			t.Log(i, len(searchResult.Events()), page*perPage+i)
+
+			expectedItemID := eventIDS[page*perPage+i]
+			assert.Equal(
+				t,
+				uuid.Equal(
+					eventIDS[page*perPage+i],
+					item.EventID(),
+				),
+				true,
+				"expected %v, got %v",
+				expectedItemID,
+				item.EventID(),
+			)
+		}
+	}
+
+	// ------------------------------------
+	// Search from thread name
+	// ------------------------------------
+
+	// Search
+	cursor = ""
+
+	for page := 0; page <= (totalEvents / perPage); page++ {
+		searchResult, err = hey.FindEventsByName(
+			ctx,
+			watcherID,
+			channelName+"."+threadName,
+			cursor,
+			perPage,
+		)
+		assert.NoError(t, err, "%q, %d", cursor, page)
+		cursor = searchResult.Cursor() // save for next query
+
 		// assert.NotEmpty(t, cursor)
 
 		var _perPage = perPage
@@ -509,7 +563,7 @@ func TestHey_simple_search(t *testing.T) {
 		}
 
 		// check items per page
-		assert.Equal(t, len(searchResult.Events()), _perPage)
+		assert.Equal(t, len(searchResult.Events()), _perPage, "%d, %#v", _perPage, searchResult.Events())
 
 		for i := 0; i < _perPage; i++ {
 			item := searchResult.Events()[i]

@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/gebv/hey/utils"
 	uuid "github.com/satori/go.uuid"
 )
 
@@ -101,7 +102,93 @@ func (s *Service) CreateNodalEvent(
 	owners []uuid.UUID,
 	creatorID uuid.UUID,
 ) (uuid.UUID, uuid.UUID, error) {
+	return s.createNodalEvent(
+		ctx,
+		threadID.String(),
+		threadID,
+		owners,
+		creatorID,
+	)
+}
 
+// CreateNodalEvent create new nodal event
+// waiting ChannelID from context
+func (s *Service) CreateNodalEventWithThreadName(
+	ctx context.Context,
+	threadName string,
+	threadID uuid.UUID,
+	owners []uuid.UUID,
+	creatorID uuid.UUID,
+) (uuid.UUID, uuid.UUID, error) {
+
+	if err := utils.ValidName(threadName); err != nil {
+		return uuid.Nil, uuid.Nil, err
+	}
+
+	return s.createNodalEvent(
+		ctx,
+		threadName,
+		threadID,
+		owners,
+		creatorID,
+	)
+}
+
+func (s *Service) CreateNewBranchEventWithThreadName(
+	ctx context.Context,
+	threadName string,
+	threadID uuid.UUID,
+	relatedEventID uuid.UUID, //
+	owners []uuid.UUID,
+	creatorID uuid.UUID,
+	data []byte,
+) (uuid.UUID, uuid.UUID, error) {
+
+	if err := utils.ValidName(threadName); err != nil {
+		return uuid.Nil, uuid.Nil, err
+	}
+
+	return s.createNewBranchEvent(
+		ctx,
+		threadName,
+		threadID,
+		relatedEventID,
+		owners,
+		creatorID,
+		data,
+	)
+}
+
+// CreateNewBranchEvent create a new event in branch
+// if the event already has the branch - error
+func (s *Service) CreateNewBranchEvent(
+	ctx context.Context,
+	threadID uuid.UUID,
+	relatedEventID uuid.UUID, //
+	owners []uuid.UUID,
+	creatorID uuid.UUID,
+	data []byte,
+) (uuid.UUID, uuid.UUID, error) {
+	return s.createNewBranchEvent(
+		ctx,
+		threadID.String(),
+		threadID,
+		relatedEventID,
+		owners,
+		creatorID,
+		data,
+	)
+}
+
+// private
+
+func (s *Service) createNodalEvent(
+	ctx context.Context,
+	threadName string,
+	threadID uuid.UUID,
+	owners []uuid.UUID,
+	creatorID uuid.UUID,
+) (uuid.UUID, uuid.UUID, error) {
 	ctx, cancel := context.WithTimeout(ctx, time.Millisecond*TimeoutDefault)
 	done := make(chan error, 1)
 	defer func() {
@@ -153,10 +240,11 @@ func (s *Service) CreateNodalEvent(
 
 		// branch thread
 
-		err = s.threads.CreateThread(
+		err = s.threads.CreateThreadWithName(
 			tx,
 			clientID,
 			newThreadID,
+			threadName,
 			currentThread.ChannelID(), // TODO: get channelID
 			newEventID,                // related event ID
 			threadID,                  // parent thread ID
@@ -182,17 +270,15 @@ func (s *Service) CreateNodalEvent(
 	}
 }
 
-// CreateNewBranchEvent create a new event in branch
-// if the event already has the branch - error
-func (s *Service) CreateNewBranchEvent(
+func (s *Service) createNewBranchEvent(
 	ctx context.Context,
+	threadName string,
 	threadID uuid.UUID,
 	relatedEventID uuid.UUID, //
 	owners []uuid.UUID,
 	creatorID uuid.UUID,
 	data []byte,
 ) (uuid.UUID, uuid.UUID, error) {
-
 	ctx, cancel := context.WithTimeout(ctx, time.Millisecond*TimeoutDefault)
 	done := make(chan error, 1)
 	defer func() {
@@ -241,10 +327,11 @@ func (s *Service) CreateNewBranchEvent(
 			return
 		}
 
-		err = s.threads.CreateThread(
+		err = s.threads.CreateThreadWithName(
 			tx,
 			clientID,
 			newThreadID,
+			threadName,
 			currentThread.ChannelID(), // TODO: get channelID
 			relatedEventID,            // related event ID
 			currentThread.ThreadID(),  // parent thread ID

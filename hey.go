@@ -13,6 +13,12 @@ type Hey interface {
 	CreateChannel(
 		ctx context.Context,
 		userIDs []uuid.UUID,
+	) (uuid.UUID, uuid.UUID, error)
+
+	CreateChannelName(
+		ctx context.Context,
+		name string,
+		userIDs []uuid.UUID,
 	) (channelID uuid.UUID, rootThreadID uuid.UUID, err error)
 
 	// CreateNodalEvent create new nodal event
@@ -23,6 +29,14 @@ type Hey interface {
 		owners []uuid.UUID,
 		creatorID uuid.UUID,
 	) (newThreadID uuid.UUID, newEventID uuid.UUID, err error)
+
+	CreateNodalEventWithThreadName(
+		ctx context.Context,
+		threadName string,
+		threadID uuid.UUID,
+		owners []uuid.UUID,
+		creatorID uuid.UUID,
+	) (uuid.UUID, uuid.UUID, error)
 
 	// CreateNewBranchEvent create a new event in branch
 	// if the event already has the branch - error
@@ -35,6 +49,16 @@ type Hey interface {
 		data []byte,
 	) (newThreadID uuid.UUID, newEventID uuid.UUID, err error)
 
+	CreateNewBranchEventWithThreadName(
+		ctx context.Context,
+		threadName string,
+		threadID uuid.UUID,
+		relatedEventID uuid.UUID, //
+		owners []uuid.UUID,
+		creatorID uuid.UUID,
+		data []byte,
+	) (uuid.UUID, uuid.UUID, error)
+
 	// CreateEvent create event in existing thread
 	CreateEvent(ctx context.Context,
 		threadID uuid.UUID,
@@ -42,12 +66,27 @@ type Hey interface {
 		data []byte,
 	) (eventID uuid.UUID, err error)
 
+	// CreateEventInThreadName create event in existing thread name
+	// CreateEventInThreadName(ctx context.Context,
+	// 	name string,
+	// 	creatorID uuid.UUID,
+	// 	data []byte,
+	// ) (eventID uuid.UUID, err error)
+
 	// FindEvents find events
 	// waiting WatcherID (from a user view) from context
 	FindEvents(
 		ctx context.Context,
 		watcherID uuid.UUID,
 		threadID uuid.UUID,
+		cursorStr string,
+		perPage int,
+	) (SearchResult, error)
+
+	FindEventsByName(
+		ctx context.Context,
+		watcherID uuid.UUID,
+		specialName string,
 		cursorStr string,
 		perPage int,
 	) (SearchResult, error)
@@ -90,6 +129,15 @@ type Thread interface {
 	Owners() []uuid.UUID
 	ParentThreadID() uuid.UUID
 	RelatedEventID() uuid.UUID
+}
+
+type Channel interface {
+	ClientID() uuid.UUID
+	ChannelID() uuid.UUID
+	Owners() []uuid.UUID
+	RootThreadID() uuid.UUID
+	CreatedAt() time.Time
+	UpdatedAt() time.Time
 }
 
 // type EventProvider interface {
