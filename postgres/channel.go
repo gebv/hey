@@ -4,9 +4,20 @@ import (
 	"context"
 	"time"
 
+	"github.com/gebv/hey"
 	"github.com/gebv/hey/utils"
 	uuid "github.com/satori/go.uuid"
 )
+
+func (s *Service) FindChannelByName(
+	ctx context.Context,
+	name string,
+) (hey.Channel, error) {
+	// TODO: testings
+	var clientID = ClientIDFromContext(ctx)
+
+	return s.channels.FindChannelByName(clientID, name)
+}
 
 func (s *Service) CreateChannelName(
 	ctx context.Context,

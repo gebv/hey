@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/gebv/hey"
 	uuid "github.com/satori/go.uuid"
 )
 
@@ -72,6 +73,17 @@ type Hey interface {
 	// 	creatorID uuid.UUID,
 	// 	data []byte,
 	// ) (eventID uuid.UUID, err error)
+
+	FindThreadByName(
+		ctx context.Context,
+		channelID uuid.UUID,
+		name string,
+	) (hey.Thread, error)
+
+	FindChannelByName(
+		ctx context.Context,
+		name string,
+	) (hey.Channel, error)
 
 	// FindEvents find events
 	// waiting WatcherID (from a user view) from context
