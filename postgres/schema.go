@@ -16,6 +16,7 @@ var SchemaBase = []string{
 
         CONSTRAINT uniq_client_channels_idx UNIQUE (client_id, ext_id)
     )`,
+	`CREATE INDEX IF NOT EXISTS uniq_client_channels_idx ON channels(client_id, ext_id) WHERE (ext_id IS NOT NULL)`,
 	`CREATE TABLE IF NOT EXISTS threads (
         thread_id uuid PRIMARY KEY,
         client_id uuid,
@@ -31,9 +32,9 @@ var SchemaBase = []string{
         created_at timestamp with time zone NOT NULL,
         updated_at timestamp with time zone DEFAULT now() NOT NULL,
         
-        CONSTRAINT uniq_client_threads_ids_idx UNIQUE (client_id, thread_id),
-        CONSTRAINT uniq_client_channel_threads_ext_ids_idx UNIQUE (client_id, channel_id, ext_id)
+        CONSTRAINT uniq_client_threads_ids_idx UNIQUE (client_id, thread_id) 
     )`,
+	`CREATE INDEX IF NOT EXISTS uniq_client_channel_threads_ext_ids_idx ON threads(client_id, channel_id, ext_id) WHERE (ext_id IS NOT NULL)`,
 	`CREATE TABLE IF NOT EXISTS events (
         event_id uuid PRIMARY KEY,
         client_id uuid,
