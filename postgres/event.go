@@ -108,6 +108,7 @@ func (s *Service) CreateNodalEvent(
 		threadID,
 		owners,
 		creatorID,
+		[]byte{},
 	)
 }
 
@@ -131,6 +132,51 @@ func (s *Service) CreateNodalEventWithThreadName(
 		threadID,
 		owners,
 		creatorID,
+		[]byte{},
+	)
+}
+
+// CreateNodalEventWithData create new nodal event
+// waiting ChannelID from context
+func (s *Service) CreateNodalEventWithData(
+	ctx context.Context,
+	threadID uuid.UUID,
+	owners []uuid.UUID,
+	creatorID uuid.UUID,
+	data []byte,
+) (uuid.UUID, uuid.UUID, error) {
+	return s.createNodalEvent(
+		ctx,
+		threadID.String(),
+		threadID,
+		owners,
+		creatorID,
+		data,
+	)
+}
+
+// CreateNodalEventWithThreadNameWithData create new nodal event
+// waiting ChannelID from context
+func (s *Service) CreateNodalEventWithThreadNameWithData(
+	ctx context.Context,
+	threadName string,
+	threadID uuid.UUID,
+	owners []uuid.UUID,
+	creatorID uuid.UUID,
+	data []byte,
+) (uuid.UUID, uuid.UUID, error) {
+
+	if err := utils.ValidName(threadName); err != nil {
+		return uuid.Nil, uuid.Nil, err
+	}
+
+	return s.createNodalEvent(
+		ctx,
+		threadName,
+		threadID,
+		owners,
+		creatorID,
+		data,
 	)
 }
 
@@ -188,6 +234,7 @@ func (s *Service) createNodalEvent(
 	threadID uuid.UUID,
 	owners []uuid.UUID,
 	creatorID uuid.UUID,
+	data []byte,
 ) (uuid.UUID, uuid.UUID, error) {
 	ctx, cancel := context.WithTimeout(ctx, time.Millisecond*TimeoutDefault)
 	done := make(chan error, 1)
@@ -231,12 +278,20 @@ func (s *Service) createNodalEvent(
 			currentThread.ParentThreadID(), // parent thread ID
 			currentThread.RelatedEventID(), // parent event ID
 			newThreadID,                    // branch thread id
-			[]byte{},
+			data,
 		)
 
 		if err != nil {
 			return
 		}
+
+		s.events.CreateThreadline(
+			tx,
+			clientID,
+			currentThread.ChannelID(),
+			threadID,
+			newEventID,
+		)
 
 		// branch thread
 

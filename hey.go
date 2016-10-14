@@ -30,12 +30,29 @@ type Hey interface {
 		creatorID uuid.UUID,
 	) (newThreadID uuid.UUID, newEventID uuid.UUID, err error)
 
+	CreateNodalEventWithData(
+		ctx context.Context,
+		threadID uuid.UUID,
+		owners []uuid.UUID,
+		creatorID uuid.UUID,
+		data []byte,
+	) (uuid.UUID, uuid.UUID, error)
+
 	CreateNodalEventWithThreadName(
 		ctx context.Context,
 		threadName string,
 		threadID uuid.UUID,
 		owners []uuid.UUID,
 		creatorID uuid.UUID,
+	) (uuid.UUID, uuid.UUID, error)
+
+	CreateNodalEventWithThreadNameWithData(
+		ctx context.Context,
+		threadName string,
+		threadID uuid.UUID,
+		owners []uuid.UUID,
+		creatorID uuid.UUID,
+		data []byte,
 	) (uuid.UUID, uuid.UUID, error)
 
 	// CreateNewBranchEvent create a new event in branch

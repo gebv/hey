@@ -1,6 +1,7 @@
 package postgres
 
 import (
+	"bytes"
 	"context"
 	"log"
 	"os"
@@ -584,4 +585,66 @@ func TestHey_simple_search(t *testing.T) {
 			)
 		}
 	}
+}
+
+func TestHey_simple_searchNodalEvents(t *testing.T) {
+	hey := NewService(
+		db,
+		log.New(os.Stderr, "[test hey]", 1),
+	)
+
+	ctx, _ := generateClientIDWithContext()
+	user1 := uuid.NewV4()
+	user2 := uuid.NewV4()
+	owners := []uuid.UUID{
+		user1,
+		user2,
+	}
+	var channelName = "my_custom_channel_name"
+
+	channelID, threadID, err := hey.CreateChannelName(
+		ctx,
+		channelName,
+		owners,
+	)
+	assert.NoError(t, err)
+	assert.NotEqual(t, channelID, uuid.Nil)
+	assert.NotEqual(t, threadID, uuid.Nil)
+
+	creatorID := uuid.NewV4()
+	var threadName = "my_custom_thread_name"
+	branchThreadID, nodalEventID, err := hey.CreateNodalEventWithThreadNameWithData(
+		ctx,
+		threadName,
+		threadID,
+		owners,
+		creatorID,
+		[]byte("data value"),
+	)
+	assert.NoError(t, err)
+	assert.NotEqual(t, branchThreadID, uuid.Nil)
+	assert.NotEqual(t, nodalEventID, uuid.Nil)
+
+	// check nodal events
+	searchResult, err := hey.FindEventsByName(
+		ctx,
+		user1,
+		channelName+"."+channelName,
+		"",
+		100,
+	)
+	assert.NoError(t, err)
+	assert.True(t, len(searchResult.Events()) == 1)
+	assert.True(t, uuid.Equal(
+		searchResult.Events()[0].ThreadID(),
+		threadID,
+	))
+	assert.True(t, uuid.Equal(
+		searchResult.Events()[0].BranchThreadID(),
+		branchThreadID,
+	))
+	assert.True(t, bytes.Equal(
+		searchResult.Events()[0].Data(),
+		[]byte("data value"),
+	))
 }
