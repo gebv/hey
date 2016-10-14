@@ -217,7 +217,7 @@ func (s *Service) CreateNewBranchEvent(
 ) (uuid.UUID, uuid.UUID, error) {
 	return s.createNewBranchEvent(
 		ctx,
-		threadID.String(),
+		"",
 		threadID,
 		relatedEventID,
 		owners,

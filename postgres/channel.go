@@ -55,7 +55,7 @@ func (s *Service) CreateChannel(
 		clientID,
 		channelID,
 		rootThreadID,
-		channelID.String(),
+		"",
 		userIDs,
 	)
 }
