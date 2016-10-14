@@ -612,7 +612,7 @@ func TestHey_simple_searchNodalEvents(t *testing.T) {
 	assert.NotEqual(t, threadID, uuid.Nil)
 
 	creatorID := uuid.NewV4()
-	var threadName = "my_custom_thread_name"
+	var threadName = "my_custom_thread_name1"
 	branchThreadID, nodalEventID, err := hey.CreateNodalEventWithThreadNameWithData(
 		ctx,
 		threadName,
@@ -647,4 +647,198 @@ func TestHey_simple_searchNodalEvents(t *testing.T) {
 		searchResult.Events()[0].Data(),
 		[]byte("data value"),
 	))
+}
+
+func TestHey_simple_uniqueNameThreadByChannel(t *testing.T) {
+	var (
+		counterDepth1 = 0
+		counterDepth2 = 0
+	)
+
+	hey := NewService(
+		db,
+		log.New(os.Stderr, "[test hey]", 1),
+	)
+
+	ctx, _ := generateClientIDWithContext()
+	user1 := uuid.NewV4()
+	user2 := uuid.NewV4()
+	owners := []uuid.UUID{
+		user1,
+		user2,
+	}
+	var channelName = "my_custom_channel_name"
+
+	channelID, threadID, err := hey.CreateChannelName(
+		ctx,
+		channelName,
+		owners,
+	)
+	assert.NoError(t, err)
+	assert.NotEqual(t, channelID, uuid.Nil)
+	assert.NotEqual(t, threadID, uuid.Nil)
+
+	// In the depth = 1
+
+	creatorID := uuid.NewV4()
+	var threadName1 = "my_custom_thread_name1"
+	branchThreadID, nodalEventID, err := hey.CreateNodalEventWithThreadNameWithData(
+		ctx,
+		threadName1,
+		threadID,
+		owners,
+		creatorID,
+		[]byte("data value"),
+	)
+	if assert.NoError(t, err) {
+		counterDepth1++
+	}
+	assert.NotEqual(t, branchThreadID, uuid.Nil)
+	assert.NotEqual(t, nodalEventID, uuid.Nil)
+
+	var threadName2 = "my_custom_thread_name2"
+	branchThreadID, nodalEventID, err = hey.CreateNodalEventWithThreadNameWithData(
+		ctx,
+		threadName2,
+		threadID,
+		owners,
+		creatorID,
+		[]byte("data value"),
+	)
+	if assert.NoError(t, err) {
+		counterDepth1++
+	}
+	assert.NotEqual(t, branchThreadID, uuid.Nil)
+	assert.NotEqual(t, nodalEventID, uuid.Nil)
+
+	var threadNameEmpty = ""
+	branchThreadID, nodalEventID, err = hey.CreateNodalEventWithThreadNameWithData(
+		ctx,
+		threadNameEmpty,
+		threadID,
+		owners,
+		creatorID,
+		[]byte("data value"),
+	)
+	assert.Error(t, err, "invalid name")
+	assert.Equal(t, branchThreadID, uuid.Nil)
+	assert.Equal(t, nodalEventID, uuid.Nil)
+
+	branchThreadID, nodalEventID, err = hey.CreateNodalEventWithThreadNameWithData(
+		ctx,
+		threadNameEmpty,
+		threadID,
+		owners,
+		creatorID,
+		[]byte("data value"),
+	)
+	assert.Error(t, err, "invalid name")
+	assert.Equal(t, branchThreadID, uuid.Nil)
+	assert.Equal(t, nodalEventID, uuid.Nil)
+
+	branchThreadID, nodalEventID, err = hey.CreateNodalEventWithData(
+		ctx,
+		threadID,
+		owners,
+		creatorID,
+		[]byte("data value"),
+	)
+	if assert.NoError(t, err) {
+		counterDepth1++
+	}
+	assert.NotEqual(t, branchThreadID, uuid.Nil)
+	assert.NotEqual(t, nodalEventID, uuid.Nil)
+
+	branchThreadID, nodalEventID, err = hey.CreateNodalEventWithData(
+		ctx,
+		threadID,
+		owners,
+		creatorID,
+		[]byte("data value"),
+	)
+	if assert.NoError(t, err) {
+		counterDepth1++
+	}
+	assert.NotEqual(t, branchThreadID, uuid.Nil)
+	assert.NotEqual(t, nodalEventID, uuid.Nil)
+
+	branchThreadID, nodalEventID, err = hey.CreateNodalEventWithData(
+		ctx,
+		threadID,
+		owners,
+		creatorID,
+		[]byte("data value"),
+	)
+	if assert.NoError(t, err) {
+		counterDepth1++
+	}
+	assert.NotEqual(t, branchThreadID, uuid.Nil)
+	assert.NotEqual(t, nodalEventID, uuid.Nil)
+
+	// In the depth = 2
+	threadID = branchThreadID
+
+	branchThreadID, nodalEventID, err = hey.CreateNodalEventWithData(
+		ctx,
+		threadID,
+		owners,
+		creatorID,
+		[]byte("data value"),
+	)
+	if assert.NoError(t, err) {
+		counterDepth2++
+	}
+	assert.NotEqual(t, branchThreadID, uuid.Nil)
+	assert.NotEqual(t, nodalEventID, uuid.Nil)
+
+	branchThreadID, nodalEventID, err = hey.CreateNodalEventWithData(
+		ctx,
+		threadID,
+		owners,
+		creatorID,
+		[]byte("data value"),
+	)
+	if assert.NoError(t, err) {
+		counterDepth2++
+	}
+	assert.NotEqual(t, branchThreadID, uuid.Nil)
+	assert.NotEqual(t, nodalEventID, uuid.Nil)
+
+	branchThreadID, nodalEventID, err = hey.CreateNodalEventWithData(
+		ctx,
+		threadID,
+		owners,
+		creatorID,
+		[]byte("data value"),
+	)
+	if assert.NoError(t, err) {
+		counterDepth2++
+	}
+	assert.NotEqual(t, branchThreadID, uuid.Nil)
+	assert.NotEqual(t, nodalEventID, uuid.Nil)
+
+	//
+
+	// check nodal events
+	searchResult, err := hey.FindEventsByName(
+		ctx,
+		user1,
+		channelName+"."+channelName,
+		"",
+		100,
+	)
+	assert.NoError(t, err)
+
+	assert.True(t, len(searchResult.Events()) == counterDepth1)
+
+	searchResult, err = hey.FindEvents(
+		ctx,
+		user1,
+		threadID,
+		"",
+		100,
+	)
+	assert.NoError(t, err)
+
+	assert.True(t, len(searchResult.Events()) == counterDepth2)
 }

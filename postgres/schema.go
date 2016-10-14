@@ -5,7 +5,7 @@ var SchemaBase = []string{
         channel_id uuid PRIMARY KEY,
         client_id uuid,
 
-        ext_id text NOT NULL,
+        ext_id text,
         
         owners uuid[],
 
@@ -22,7 +22,7 @@ var SchemaBase = []string{
         client_id uuid,
         channel_id uuid,
 
-        ext_id text NOT NULL,
+        ext_id text,
         
         owners uuid[],
 
