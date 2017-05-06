@@ -1,12 +1,12 @@
 
 vendor:
-	go get -v github.com/stretchr/testify/assert \
-		gopkg.in/jackc/pgx.v2 \
-		github.com/satori/go.uuid
+	go get -v github.com/stretchr/testify/assert
+	go get -v github.com/satori/go.uuid
+	go get -v github.com/tarantool/go-tarantool
 .PHONY: vendor
 
 test: vendor
-	GOPATH=${GOPATH}:${PWD} go test -v \
+	go test -v \
 		-bench=. -benchmem \
-		-run=. ./...
+		-run=. ./examples/...
 .PHONY: test
