@@ -2,9 +2,15 @@ package hey
 
 import "time"
 
+// Chronograph represents storage methods
 type Chronograph interface {
-	// двигаться по lastts
-	RecentActivityByLastTS(threadID string, lastts time.Time) ([]EventObserver, error)
+	// threads
+	NewThread(threadID string) error
+
+	NewThreadWithData(threadID string, dataType DataType, data interface{}) error
+
+	// 1. Удаляем все записи из events
+	DeleteThread(threadID) error
 
 	// подписка конкретного юзера на трэд
 	Observe(userID, threadID string) error
@@ -28,5 +34,6 @@ type Chronograph interface {
 		data interface{},
 	) error
 
-	// и так далее по каждому из
+	UpdateEvent(ev *Event) error
+	DeleteEvent(eventID string) error
 }
