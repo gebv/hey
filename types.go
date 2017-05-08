@@ -1,12 +1,32 @@
 package hey
 
-import "log"
+import (
+	"log"
+
+	msgpack "gopkg.in/vmihailenco/msgpack.v2"
+)
 
 type DataType uint32
 
 const (
 	EmptyData DataType = 0
 )
+
+func (t DataType) EncodeMsgpack(dec *msgpack.Encoder) error {
+	if err := dec.EncodeUint32(uint32(t)); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (t *DataType) DecodeMsgpack(dec *msgpack.Decoder) error {
+	if val, err := dec.DecodeUint32(); err != nil {
+		return err
+	} else {
+		*t = DataType(val)
+	}
+	return nil
+}
 
 var types = make(map[DataType]func() interface{})
 
