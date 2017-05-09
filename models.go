@@ -34,21 +34,26 @@ type Event struct {
 type Threadline struct {
 	EventID   string
 	ThreadID  string
-	UpdatedAt time.Time
+	CreatedAt time.Time
 }
 
 // Observer это таблица для хранения подписок на трэды.
-// используется при создании нового события в трэде,
-// для всех подписчиков этого трэда
-// создаётся запись в таблице Threadline
+// Для выбора пописок нужен итератор по UserID.
+// Для выбора подписчиков нужен итератор по ThreadID
 type Observer struct {
-	UserID   string
-	ThreadID string
-	//ParentThreadID          string
-	//RelatedThreadlineExists bool
-	LastTimeStamp time.Time // unix time stamp
-	DataType      DataType
-	Data          interface{}
+	UserID string
+	// ID трэда, на который подписан юзер
+	ThreadID          string
+	LastDeliveredTime time.Time
+}
+
+// Sources таблица источников каджого трэда.
+// используется при создании нового события в трэде,
+// для всех трэдов-подписчиков (TargetThreadID) этого трэда SourceThreadID
+// создаётся запись в таблице Threadline.
+type Sources struct {
+	TargetThreadID string
+	SourceThreadID string
 }
 
 // User подписчик, обозреватель,
