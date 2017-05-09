@@ -8,29 +8,28 @@ type Manager interface {
 	NewThread(*Thread) error
 	GetThread(threadID string) (*Thread, error)
 	UpdateThread(*Thread) error
-	// 1. Удаляем все записи из events
 	DeleteThread(threadID string) error
 
-	// subscriptions
-	// подписка конкретного юзера на трэд
-	Observe(userID, srcThreadID, desThreadID string) error
-	// отписка от трэда
-	Ignore(userID, srcThreadID string) error
-	ThreadObservers(threadID string) ([]User, error)
-	// список трэдов юзера
-	Subscriptions(userID string) ([]Thread, error)
+	// thread sources
+	AddSource(dstThread, sourceThread string) error
+	GetSources(threadID string, offset, limit uint32) ([]Thread, error)
+	GetRefers(sourceThreadID string, offset, limit uint32) ([]Thread, error)
+	RemoveSource(dstThread, sourceThread string) error
+
+	// user subscriptions
+	Observe(userID, threadID string) error
+	Ignore(userID, threadID string) error
+	Observers(threadID string, offset, limit uint32) ([]User, error)
+	Observes(userID string, offset, limit uint32) ([]Thread, error)
+	MarkAsDelivered(userID string, threadID string, times ...time.Time) error
 
 	// threadline
-	// RecentActivityByLastTS возвращает события позже lastts
-	RecentActivityByLastTS(threadID string, limit, lastts time.Time) ([]Event, error)
-	// двигаться по limit,offset что предлагает tnt
-	RecentActivity(threadID string, limit, offset int) ([]Event, error)
+	RecentActivityByLastTS(threadID string, limit uint32, lastts time.Time) ([]Event, error)
+	RecentActivity(threadID string, limit, offset uint32) ([]Event, error)
 
 	// events
-	// 1. Достаём всех подписчиков трэда.
-	// 2. Вставляем в Timeline для всех подписчиков этот eventID
 	NewEvent(*Event) error
-	GetEvent(id string) error
+	GetEvent(id string) (*Event, error)
 	GetEvents(ids ...string) ([]Event, error)
 	UpdateEvent(ev *Event) error
 	DeleteEvent(eventID string) error
