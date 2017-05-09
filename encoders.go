@@ -1,4 +1,4 @@
-package main
+package hey
 
 import (
 	"log"
@@ -27,6 +27,11 @@ func init() {
 		reflect.TypeOf(Observer{}),
 		encodeObserver,
 		decodeObserver,
+	)
+	msgpack.Register(
+		reflect.TypeOf(Sources{}),
+		encodeSources,
+		decodeSources,
 	)
 	msgpack.Register(
 		reflect.TypeOf(User{}),
@@ -167,7 +172,7 @@ func encodeThreadline(e *msgpack.Encoder, v reflect.Value) (err error) {
 	if err = e.EncodeString(m.ThreadID); err != nil {
 		return
 	}
-	if err = e.EncodeTime(m.UpdatedAt); err != nil {
+	if err = e.EncodeTime(m.CreatedAt); err != nil {
 		return
 	}
 	return
@@ -191,7 +196,7 @@ func decodeThreadline(d *msgpack.Decoder, v reflect.Value) (err error) {
 	if m.ThreadID, err = d.DecodeString(); err != nil {
 		return
 	}
-	if m.UpdatedAt, err = d.DecodeTime(); err != nil {
+	if m.CreatedAt, err = d.DecodeTime(); err != nil {
 		return
 	}
 
@@ -201,7 +206,7 @@ func decodeThreadline(d *msgpack.Decoder, v reflect.Value) (err error) {
 func encodeObserver(e *msgpack.Encoder, v reflect.Value) (err error) {
 	m := v.Interface().(Observer)
 
-	if err = e.EncodeSliceLen(5); err != nil {
+	if err = e.EncodeSliceLen(3); err != nil {
 		return
 	}
 	if err = e.EncodeString(m.UserID); err != nil {
@@ -210,13 +215,7 @@ func encodeObserver(e *msgpack.Encoder, v reflect.Value) (err error) {
 	if err = e.EncodeString(m.ThreadID); err != nil {
 		return
 	}
-	if err = e.EncodeTime(m.LastTimeStamp); err != nil {
-		return
-	}
-	if err = e.Encode(m.DataType); err != nil {
-		return
-	}
-	if err = e.Encode(m.Data); err != nil {
+	if err = e.EncodeTime(m.LastDeliveredTime); err != nil {
 		return
 	}
 	return
@@ -230,7 +229,7 @@ func decodeObserver(d *msgpack.Decoder, v reflect.Value) (err error) {
 		return
 	}
 
-	if l != 5 {
+	if l != 3 {
 		return ErrMsgPackConflictFields
 	}
 
@@ -240,20 +239,44 @@ func decodeObserver(d *msgpack.Decoder, v reflect.Value) (err error) {
 	if m.ThreadID, err = d.DecodeString(); err != nil {
 		return
 	}
-	if m.LastTimeStamp, err = d.DecodeTime(); err != nil {
-		return
-	}
-	if err = d.Decode(&m.DataType); err != nil {
+	if m.LastDeliveredTime, err = d.DecodeTime(); err != nil {
 		return
 	}
 
-	if m.Data, err = FactoryDataObj(m.DataType); err != nil {
-		if err = d.Skip(); err != nil {
-			return
-		}
-		log.Printf("hey: not supported data type DataType(%d)", m.DataType)
-		return ErrNotRegDataType
-	} else if err = d.Decode(&m.Data); err != nil {
+	return
+}
+
+func encodeSources(e *msgpack.Encoder, v reflect.Value) (err error) {
+	m := v.Interface().(Sources)
+
+	if err = e.EncodeSliceLen(2); err != nil {
+		return
+	}
+	if err = e.EncodeString(m.TargetThreadID); err != nil {
+		return
+	}
+	if err = e.EncodeString(m.SourceThreadID); err != nil {
+		return
+	}
+	return
+}
+
+func decodeSources(d *msgpack.Decoder, v reflect.Value) (err error) {
+	var l int
+
+	m := v.Addr().Interface().(*Sources)
+	if l, err = d.DecodeSliceLen(); err != nil {
+		return
+	}
+
+	if l != 2 {
+		return ErrMsgPackConflictFields
+	}
+
+	if m.TargetThreadID, err = d.DecodeString(); err != nil {
+		return
+	}
+	if m.SourceThreadID, err = d.DecodeString(); err != nil {
 		return
 	}
 
