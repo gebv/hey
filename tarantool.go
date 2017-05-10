@@ -1,7 +1,6 @@
 package hey
 
 import (
-	"log"
 	"os"
 	"time"
 
@@ -278,7 +277,6 @@ func (m *TarantoolManager) RecentActivityByLastTS(threadID string,
 	//err = m.conn.SelectTyped(eventsSpace, "threadline_idx", 0, limit,
 	//	tarantool.IterGe, makeKey(threadID, lastts.Unix()), &events)
 	if err != nil {
-		log.Println(err)
 		return
 	}
 	return
