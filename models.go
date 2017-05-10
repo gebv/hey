@@ -21,25 +21,20 @@ type Thread struct {
 // Events
 
 type Event struct {
-	EventID   string
-	ThreadID  string
-	DataType  DataType
-	Data      interface{}
+	EventID  string
+	ThreadID string
+
 	CreatedAt time.Time
 	UpdatedAt time.Time
-}
 
-// Threadline - таблица для хранения индекса событий каждой подписки
-// выборка происходит в обратном хронологическом порядке по ThreadID
-type Threadline struct {
-	EventID   string
-	ThreadID  string
-	CreatedAt time.Time
+	DataType DataType
+	Data     interface{}
 }
 
 // Observer это таблица для хранения подписок на трэды.
 // Для выбора пописок нужен итератор по UserID.
 // Для выбора подписчиков нужен итератор по ThreadID
+// lua primary: threadID, userID
 type Observer struct {
 	UserID string
 	// ID трэда, на который подписан юзер
@@ -61,4 +56,19 @@ type User struct {
 	UserID   string
 	DataType DataType
 	Data     interface{}
+}
+
+// RelatedData связанные с событием данные юзера
+// lua primary: user_id, event_id
+type RelatedData struct {
+	UserID   string
+	EventID  string
+	DataType DataType
+	Data     interface{}
+}
+
+type EventObserver struct {
+	Event Event
+
+	RelatedData RelatedData
 }
