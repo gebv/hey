@@ -33,6 +33,7 @@ func main() {
 
 	// создаём новое событие в чате
 	message := NewMessage("ilon", "hello all!")
+	message.ThreadID = chat.ThreadID
 	err = chrono.NewEvent(&message)
 	checkErr(err)
 
@@ -40,7 +41,7 @@ func main() {
 	events, err := chrono.RecentActivity(user1.UserID, chat.ThreadID, 10)
 	checkErr(err)
 	if len(events) != 1 {
-		log.Fatalln("len events not 1")
+		log.Fatalln("len events not 1 ", len(events))
 	}
 
 	// помечаем все события прочитанными
@@ -51,13 +52,13 @@ func main() {
 	events, err = chrono.RecentActivity(user1.UserID, chat.ThreadID, 10)
 	checkErr(err)
 	if len(events) != 0 {
-		log.Fatalln("len events not 0")
+		log.Fatalln("len events not 0", len(events))
 	}
 
 }
 
 func checkErr(err error) {
 	if err != nil {
-		log.Fatalln(err)
+		panic(err)
 	}
 }

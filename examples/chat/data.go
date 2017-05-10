@@ -1,6 +1,9 @@
 package main
 
-import chronograph "github.com/zhuharev/chronograph"
+import (
+	chronograph "github.com/zhuharev/chronograph"
+	msgpack "gopkg.in/vmihailenco/msgpack.v2"
+)
 
 const (
 	MessageDataType chronograph.DataType = 1
@@ -25,4 +28,18 @@ func NewMessage(senderName string, body string) chronograph.Event {
 type MessageData struct {
 	SenderName string
 	Body       string
+}
+
+func (m *MessageData) EncodeMsgpack(enc *msgpack.Encoder) error {
+	enc.EncodeSliceLen(2)
+	enc.EncodeString(m.SenderName)
+	enc.EncodeString(m.Body)
+	return nil
+}
+
+func (m *MessageData) DecodeMsgpack(dec *msgpack.Decoder) error {
+	dec.DecodeSliceLen()
+	m.SenderName, _ = dec.DecodeString()
+	m.Body, _ = dec.DecodeString()
+	return nil
 }

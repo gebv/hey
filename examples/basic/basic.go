@@ -42,14 +42,17 @@ func main() {
 
 	// создаём событие в трэде
 	note := NewNotification("Событие", "Новое сообщение!")
+	note.ThreadID = notify1.ThreadID
 	err = chrono.NewEvent(&note)
 	checkErr(err)
+
+	log.Println(note)
 
 	// достаем последние события
 	events, err := chrono.RecentActivity(user1.UserID, notify1.ThreadID, 10)
 	checkErr(err)
 	if len(events) != 1 {
-		log.Fatalln("длинна событий != 1")
+		log.Fatalln("длинна событий != 1", len(events))
 	}
 	if _, ok := events[0].Data.(*NotificationData); !ok {
 		log.Fatalln("ошибка декодирования данных")
