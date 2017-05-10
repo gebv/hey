@@ -46,8 +46,6 @@ func main() {
 	err = chrono.NewEvent(&note)
 	checkErr(err)
 
-	log.Println(note)
-
 	// достаем последние события
 	events, err := chrono.RecentActivity(user1.UserID, notify1.ThreadID, 10)
 	checkErr(err)
@@ -80,6 +78,7 @@ func main() {
 		log.Fatalln("ошибка декодинга")
 	}
 
+	log.Println("done")
 }
 
 func checkErr(err error) {
