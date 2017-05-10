@@ -221,7 +221,7 @@ func (m *TarantoolManager) Ignore(userID, threadID string) (err error) {
 // Observers возвращает подписчиков трэда
 func (m *TarantoolManager) Observers(threadID string, offset, limit uint32) (users []User, err error) {
 	var obs []Observer
-	err = m.conn.SelectTyped(observerSpace, "subs_thread_id_idx", offset, limit, tarantool.IterEq, makeKey(threadID), &obs)
+	err = m.conn.SelectTyped(observerSpace, "primary", offset, limit, tarantool.IterEq, makeKey(threadID), &obs)
 	if err != nil {
 		return
 	}
