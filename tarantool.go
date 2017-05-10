@@ -1,6 +1,7 @@
 package hey
 
 import (
+	"log"
 	"os"
 	"time"
 
@@ -265,7 +266,7 @@ func (m *TarantoolManager) MarkAsDelivered(userID, threadID string, times ...tim
 		t = times[0]
 	}
 
-	_, err = m.conn.Update(observerSpace, "primary", makeKey(threadID, userID), makeUpdate(newUpdateOp("=", 3, t)))
+	_, err = m.conn.Update(observerSpace, "primary", makeKey(threadID, userID), makeUpdate(newUpdateOp("=", 2, t.Unix()))) //makeUpdate(newUpdateOp("=", 3, t.Unix())))
 
 	return
 }
@@ -273,10 +274,11 @@ func (m *TarantoolManager) MarkAsDelivered(userID, threadID string, times ...tim
 // RecentActivityByLastTS возвращает события позже lastts
 func (m *TarantoolManager) RecentActivityByLastTS(threadID string,
 	limit uint32, lastts time.Time) (events []Event, err error) {
-
-	err = m.conn.SelectTyped(eventsSpace, "threadline_idx", limit, 0,
-		tarantool.IterGe, makeKey(threadID, lastts.Unix()), &events)
+	err = m.conn.Call17Typed("by_last_ts", makeKey(threadID, lastts.Unix()), &events)
+	//err = m.conn.SelectTyped(eventsSpace, "threadline_idx", 0, limit,
+	//	tarantool.IterGe, makeKey(threadID, lastts.Unix()), &events)
 	if err != nil {
+		log.Println(err)
 		return
 	}
 	return
@@ -369,12 +371,12 @@ func (m *TarantoolManager) SetRelatedData(rel *RelatedData) (err error) {
 // GetRelatedDatas возвращает события с кастомными данными юзера
 func (m *TarantoolManager) GetRelatedDatas(userID string, events ...Event) (obs []EventObserver, err error) {
 	for _, ev := range events {
-		var rel RelatedData
+		var rel []RelatedData
 		err = m.get(relatedSpace, "primary", makeKey(userID, ev.EventID), &rel)
 		if err != nil {
 			return
 		}
-		obs = append(obs, EventObserver{Event: ev, RelatedData: rel})
+		obs = append(obs, EventObserver{Event: ev, RelatedData: rel[0]})
 	}
 
 	return
