@@ -20,6 +20,7 @@ var (
 	eventsSpace     = DefaultTarantoolPrefix + "events"
 	usersSpace      = DefaultTarantoolPrefix + "users"
 	sourcesSpace    = DefaultTarantoolPrefix + "sources"
+	relatedSpace    = DefaultTarantoolPrefix + "related"
 )
 
 type TarantoolOpts struct {
@@ -198,8 +199,9 @@ func (m *TarantoolManager) RemoveSource(dstThread, sourceThread string) (err err
 // Observe - подписка конкретного юзера на трэд
 func (m *TarantoolManager) Observe(userID, threadID string) error {
 	obs := Observer{
-		UserID:   userID,
-		ThreadID: threadID,
+		UserID:            userID,
+		ThreadID:          threadID,
+		LastDeliveredTime: time.Now(),
 	}
 	_, err := m.conn.Insert(observerSpace, &obs)
 	return err
@@ -213,25 +215,24 @@ func (m *TarantoolManager) Ignore(userID, threadID string) (err error) {
 		return err
 	}
 
-	// удаляем из трэадлайна все записи с targetThreadID
-
 	return err
 }
 
 // Observers возвращает подписчиков трэда
 func (m *TarantoolManager) Observers(threadID string, offset, limit uint32) (users []User, err error) {
 	var obs []Observer
-	err = m.conn.SelectTyped(observerSpace, "primary", offset, limit, tarantool.IterReq, makeKey(threadID), &obs)
+	err = m.conn.SelectTyped(observerSpace, "subs_thread_id_idx", offset, limit, tarantool.IterEq, makeKey(threadID), &obs)
 	if err != nil {
 		return
 	}
+
 	for _, o := range obs {
-		var u User
+		var u []User
 		err = m.get(usersSpace, "primary", makeKey(o.UserID), &u)
 		if err != nil {
 			return
 		}
-		users = append(users, u)
+		users = append(users, u[0])
 	}
 	return
 }
@@ -242,26 +243,14 @@ func (m *TarantoolManager) Observes(
 	offset,
 	limit uint32) (threads []Thread, err error) {
 	var obs []Observer
-	err = m.conn.SelectTyped(
-		observerSpace,
-		"subscriptions_idx",
-		offset,
-		limit,
-		tarantool.IterReq,
-		makeKey(userID),
-		&obs)
+	err = m.conn.SelectTyped(observerSpace, "subscriptions_idx", offset, limit,
+		tarantool.IterReq, makeKey(userID), &obs)
 	if err != nil {
 		return
 	}
 	for _, o := range obs {
 		var thread Thread
-		err = m.conn.SelectTyped(threadsSpace,
-			"primary",
-			0,
-			1,
-			tarantool.IterEq,
-			makeKey(o.ThreadID),
-			&thread)
+		err = m.get(threadsSpace, "primary", makeKey(o.ThreadID), &thread)
 		if err != nil {
 			return
 		}
@@ -282,59 +271,45 @@ func (m *TarantoolManager) MarkAsDelivered(userID, threadID string, times ...tim
 }
 
 // RecentActivityByLastTS возвращает события позже lastts
-func (m *TarantoolManager) RecentActivityByLastTS(threadID string, limit uint32,
-	lastts time.Time) (events []Event, err error) {
+func (m *TarantoolManager) RecentActivityByLastTS(threadID string,
+	limit uint32, lastts time.Time) (events []Event, err error) {
 
-	var threadline []Threadline
-	err = m.conn.SelectTyped(threadLineSpace, "threadline_idx", limit, 0,
-		tarantool.IterGt, makeKey(threadID, lastts), &threadline)
+	err = m.conn.SelectTyped(eventsSpace, "threadline_idx", limit, 0,
+		tarantool.IterGe, makeKey(threadID, lastts.Unix()), &events)
 	if err != nil {
 		return
-	}
-
-	for _, obs := range threadline {
-		var event Event
-		err = m.conn.SelectTyped(
-			eventsSpace,
-			"primary",
-			0,
-			1,
-			tarantool.IterEq,
-			makeKey(obs.EventID),
-			&event)
-		if err != nil {
-			return
-		}
-		events = append(events, event)
 	}
 	return
 }
 
-// RecentActivity события двигаться по limit,offset что предлагает tnt
-func (m *TarantoolManager) RecentActivity(threadID string, limit, offset uint32) (events []Event, err error) {
-	var threadline []Threadline
-	err = m.conn.SelectTyped(threadLineSpace, "threadline_idx", limit, offset, tarantool.IterReq, makeKey(threadID), &threadline)
+// RecentActivity возвращает события позже lastts
+func (m *TarantoolManager) RecentActivity(userID, threadID string, limit uint32) (events []Event, err error) {
+	var obs []Observer
+	err = m.get(observerSpace, "primary", makeKey(threadID, userID), &obs)
 	if err != nil {
 		return
 	}
-	for _, obs := range threadline {
-		var event Event
-		err = m.conn.SelectTyped(eventsSpace, "primary", 0, 1, tarantool.IterEq, makeKey(obs.EventID), &event)
-		if err != nil {
-			return
-		}
-		events = append(events, event)
+	return m.RecentActivityByLastTS(threadID, limit, obs[0].LastDeliveredTime)
+}
+
+// Activity события двигаться по limit,offset что предлагает tnt
+func (m *TarantoolManager) Activity(threadID string, limit,
+	offset uint32) (events []Event, err error) {
+	err = m.conn.SelectTyped(eventsSpace, "threadline_idx", limit, offset, tarantool.IterReq, makeKey(threadID), &events)
+	if err != nil {
+		return
 	}
 	return
 }
 
-// events
-// todo
-// 1. Достаём всех подписчиков трэда.
-// 2. Вставляем в Timeline для всех подписчиков этот eventID
+// NewEvent cerate new event. if id empty, wiil be generated uuid.
+// If CreatedAt zero, it will be setted to time.Now()
 func (m *TarantoolManager) NewEvent(ev *Event) (err error) {
 	if ev.EventID == "" {
 		ev.EventID = uuid.NewV4().String()
+	}
+	if ev.CreatedAt.IsZero() {
+		ev.CreatedAt = time.Now()
 	}
 
 	_, err = m.conn.Insert(eventsSpace, ev)
@@ -345,6 +320,7 @@ func (m *TarantoolManager) NewEvent(ev *Event) (err error) {
 	return nil
 }
 
+// GetEvent return event by their ID
 func (m *TarantoolManager) GetEvent(eventID string) (ev *Event, err error) {
 	ev = new(Event)
 	err = m.conn.SelectTyped(eventsSpace, "primary", 0, 1, tarantool.IterEq,
@@ -355,13 +331,12 @@ func (m *TarantoolManager) GetEvent(eventID string) (ev *Event, err error) {
 // GetEvents returns events by their ids
 func (m *TarantoolManager) GetEvents(ids ...string) (events []Event, err error) {
 	for _, id := range ids {
-		var event Event
-		err = m.conn.SelectTyped(eventsSpace, "primary", 0, 1, tarantool.IterEq,
-			makeKey(id), &event)
+		var event *Event
+		event, err = m.GetEvent(id)
 		if err != nil {
 			return
 		}
-		events = append(events, event)
+		events = append(events, *event)
 	}
 	return
 }
@@ -383,4 +358,44 @@ func (m *TarantoolManager) DeleteEvent(eventID string) (err error) {
 		return
 	}
 	return nil
+}
+
+// SetRelatedData set data to tarantool
+func (m *TarantoolManager) SetRelatedData(rel *RelatedData) (err error) {
+	_, err = m.conn.Replace(relatedSpace, rel)
+	return
+}
+
+// GetRelatedDatas возвращает события с кастомными данными юзера
+func (m *TarantoolManager) GetRelatedDatas(userID string, events ...Event) (obs []EventObserver, err error) {
+	for _, ev := range events {
+		var rel RelatedData
+		err = m.get(relatedSpace, "primary", makeKey(userID, ev.EventID), &rel)
+		if err != nil {
+			return
+		}
+		obs = append(obs, EventObserver{Event: ev, RelatedData: rel})
+	}
+
+	return
+}
+
+// NewUser create new user. If u.UserID empty, will be generated uuid
+func (m *TarantoolManager) NewUser(u *User) (err error) {
+	if u.UserID == "" {
+		u.UserID = uuid.NewV4().String()
+	}
+
+	_, err = m.conn.Insert(usersSpace, u)
+	if err != nil {
+		return
+	}
+	return nil
+}
+
+// GetUser return user by their ID
+func (m *TarantoolManager) GetUser(userID string) (u *User, err error) {
+	u = new(User)
+	err = m.get(usersSpace, "primary", makeKey(userID), u)
+	return
 }
