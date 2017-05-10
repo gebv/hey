@@ -3,6 +3,7 @@ package hey
 import (
 	"log"
 	"reflect"
+	"time"
 
 	"gopkg.in/vmihailenco/msgpack.v2"
 )
@@ -19,11 +20,6 @@ func init() {
 		decodeEvent,
 	)
 	msgpack.Register(
-		reflect.TypeOf(Threadline{}),
-		encodeThreadline,
-		decodeThreadline,
-	)
-	msgpack.Register(
 		reflect.TypeOf(Observer{}),
 		encodeObserver,
 		decodeObserver,
@@ -38,6 +34,16 @@ func init() {
 		encodeUser,
 		decodeUser,
 	)
+	msgpack.Register(
+		reflect.TypeOf(RelatedData{}),
+		encodeRelatedData,
+		decodeRelatedData,
+	)
+	msgpack.Register(
+		reflect.TypeOf(EventObserver{}),
+		encodeEventObserver,
+		decodeEventObserver,
+	)
 
 }
 
@@ -47,15 +53,19 @@ func encodeThread(e *msgpack.Encoder, v reflect.Value) (err error) {
 	if err = e.EncodeSliceLen(3); err != nil {
 		return
 	}
+
 	if err = e.EncodeString(m.ThreadID); err != nil {
 		return
 	}
+
 	if err = e.Encode(m.DataType); err != nil {
 		return
 	}
+
 	if err = e.Encode(m.Data); err != nil {
 		return
 	}
+
 	return
 }
 
@@ -97,24 +107,31 @@ func encodeEvent(e *msgpack.Encoder, v reflect.Value) (err error) {
 	if err = e.EncodeSliceLen(6); err != nil {
 		return
 	}
+
 	if err = e.EncodeString(m.EventID); err != nil {
 		return
 	}
+
 	if err = e.EncodeString(m.ThreadID); err != nil {
 		return
 	}
+
+	if err = e.EncodeInt64(m.CreatedAt.Unix()); err != nil {
+		return
+	}
+
+	if err = e.EncodeInt64(m.UpdatedAt.Unix()); err != nil {
+		return
+	}
+
 	if err = e.Encode(m.DataType); err != nil {
 		return
 	}
+
 	if err = e.Encode(m.Data); err != nil {
 		return
 	}
-	if err = e.EncodeTime(m.CreatedAt); err != nil {
-		return
-	}
-	if err = e.EncodeTime(m.UpdatedAt); err != nil {
-		return
-	}
+
 	return
 }
 
@@ -136,6 +153,21 @@ func decodeEvent(d *msgpack.Decoder, v reflect.Value) (err error) {
 	if m.ThreadID, err = d.DecodeString(); err != nil {
 		return
 	}
+
+	var secsCreatedAt int64
+	if secsCreatedAt, err = d.DecodeInt64(); err != nil {
+		return
+	} else {
+		m.CreatedAt = time.Unix(secsCreatedAt, 0)
+	}
+
+	var secsUpdatedAt int64
+	if secsUpdatedAt, err = d.DecodeInt64(); err != nil {
+		return
+	} else {
+		m.UpdatedAt = time.Unix(secsUpdatedAt, 0)
+	}
+
 	if err = d.Decode(&m.DataType); err != nil {
 		return
 	}
@@ -150,56 +182,6 @@ func decodeEvent(d *msgpack.Decoder, v reflect.Value) (err error) {
 		return
 	}
 
-	if m.CreatedAt, err = d.DecodeTime(); err != nil {
-		return
-	}
-	if m.UpdatedAt, err = d.DecodeTime(); err != nil {
-		return
-	}
-
-	return
-}
-
-func encodeThreadline(e *msgpack.Encoder, v reflect.Value) (err error) {
-	m := v.Interface().(Threadline)
-
-	if err = e.EncodeSliceLen(3); err != nil {
-		return
-	}
-	if err = e.EncodeString(m.EventID); err != nil {
-		return
-	}
-	if err = e.EncodeString(m.ThreadID); err != nil {
-		return
-	}
-	if err = e.EncodeTime(m.CreatedAt); err != nil {
-		return
-	}
-	return
-}
-
-func decodeThreadline(d *msgpack.Decoder, v reflect.Value) (err error) {
-	var l int
-
-	m := v.Addr().Interface().(*Threadline)
-	if l, err = d.DecodeSliceLen(); err != nil {
-		return
-	}
-
-	if l != 3 {
-		return ErrMsgPackConflictFields
-	}
-
-	if m.EventID, err = d.DecodeString(); err != nil {
-		return
-	}
-	if m.ThreadID, err = d.DecodeString(); err != nil {
-		return
-	}
-	if m.CreatedAt, err = d.DecodeTime(); err != nil {
-		return
-	}
-
 	return
 }
 
@@ -209,15 +191,19 @@ func encodeObserver(e *msgpack.Encoder, v reflect.Value) (err error) {
 	if err = e.EncodeSliceLen(3); err != nil {
 		return
 	}
+
 	if err = e.EncodeString(m.UserID); err != nil {
 		return
 	}
+
 	if err = e.EncodeString(m.ThreadID); err != nil {
 		return
 	}
-	if err = e.EncodeTime(m.LastDeliveredTime); err != nil {
+
+	if err = e.EncodeInt64(m.LastDeliveredTime.Unix()); err != nil {
 		return
 	}
+
 	return
 }
 
@@ -239,8 +225,12 @@ func decodeObserver(d *msgpack.Decoder, v reflect.Value) (err error) {
 	if m.ThreadID, err = d.DecodeString(); err != nil {
 		return
 	}
-	if m.LastDeliveredTime, err = d.DecodeTime(); err != nil {
+
+	var secsLastDeliveredTime int64
+	if secsLastDeliveredTime, err = d.DecodeInt64(); err != nil {
 		return
+	} else {
+		m.LastDeliveredTime = time.Unix(secsLastDeliveredTime, 0)
 	}
 
 	return
@@ -252,12 +242,15 @@ func encodeSources(e *msgpack.Encoder, v reflect.Value) (err error) {
 	if err = e.EncodeSliceLen(2); err != nil {
 		return
 	}
+
 	if err = e.EncodeString(m.TargetThreadID); err != nil {
 		return
 	}
+
 	if err = e.EncodeString(m.SourceThreadID); err != nil {
 		return
 	}
+
 	return
 }
 
@@ -289,15 +282,19 @@ func encodeUser(e *msgpack.Encoder, v reflect.Value) (err error) {
 	if err = e.EncodeSliceLen(3); err != nil {
 		return
 	}
+
 	if err = e.EncodeString(m.UserID); err != nil {
 		return
 	}
+
 	if err = e.Encode(m.DataType); err != nil {
 		return
 	}
+
 	if err = e.Encode(m.Data); err != nil {
 		return
 	}
+
 	return
 }
 
@@ -327,6 +324,107 @@ func decodeUser(d *msgpack.Decoder, v reflect.Value) (err error) {
 		log.Printf("hey: not supported data type DataType(%d)", m.DataType)
 		return ErrNotRegDataType
 	} else if err = d.Decode(&m.Data); err != nil {
+		return
+	}
+
+	return
+}
+
+func encodeRelatedData(e *msgpack.Encoder, v reflect.Value) (err error) {
+	m := v.Interface().(RelatedData)
+
+	if err = e.EncodeSliceLen(4); err != nil {
+		return
+	}
+
+	if err = e.EncodeString(m.UserID); err != nil {
+		return
+	}
+
+	if err = e.EncodeString(m.EventID); err != nil {
+		return
+	}
+
+	if err = e.Encode(m.DataType); err != nil {
+		return
+	}
+
+	if err = e.Encode(m.Data); err != nil {
+		return
+	}
+
+	return
+}
+
+func decodeRelatedData(d *msgpack.Decoder, v reflect.Value) (err error) {
+	var l int
+
+	m := v.Addr().Interface().(*RelatedData)
+	if l, err = d.DecodeSliceLen(); err != nil {
+		return
+	}
+
+	if l != 4 {
+		return ErrMsgPackConflictFields
+	}
+
+	if m.UserID, err = d.DecodeString(); err != nil {
+		return
+	}
+	if m.EventID, err = d.DecodeString(); err != nil {
+		return
+	}
+	if err = d.Decode(&m.DataType); err != nil {
+		return
+	}
+
+	if m.Data, err = FactoryDataObj(m.DataType); err != nil {
+		if err = d.Skip(); err != nil {
+			return
+		}
+		log.Printf("hey: not supported data type DataType(%d)", m.DataType)
+		return ErrNotRegDataType
+	} else if err = d.Decode(&m.Data); err != nil {
+		return
+	}
+
+	return
+}
+
+func encodeEventObserver(e *msgpack.Encoder, v reflect.Value) (err error) {
+	m := v.Interface().(EventObserver)
+
+	if err = e.EncodeSliceLen(2); err != nil {
+		return
+	}
+
+	if err = e.Encode(m.Event); err != nil {
+		return
+	}
+
+	if err = e.Encode(m.RelatedData); err != nil {
+		return
+	}
+
+	return
+}
+
+func decodeEventObserver(d *msgpack.Decoder, v reflect.Value) (err error) {
+	var l int
+
+	m := v.Addr().Interface().(*EventObserver)
+	if l, err = d.DecodeSliceLen(); err != nil {
+		return
+	}
+
+	if l != 2 {
+		return ErrMsgPackConflictFields
+	}
+
+	if err = d.Decode(&m.Event); err != nil {
+		return
+	}
+	if err = d.Decode(&m.RelatedData); err != nil {
 		return
 	}
 
