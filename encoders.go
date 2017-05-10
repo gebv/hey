@@ -116,11 +116,11 @@ func encodeEvent(e *msgpack.Encoder, v reflect.Value) (err error) {
 		return
 	}
 
-	if err = e.EncodeInt64(m.CreatedAt.Unix()); err != nil {
+	if err = e.EncodeInt64(m.CreatedAt.UnixNano()); err != nil {
 		return
 	}
 
-	if err = e.EncodeInt64(m.UpdatedAt.Unix()); err != nil {
+	if err = e.EncodeInt64(m.UpdatedAt.UnixNano()); err != nil {
 		return
 	}
 
@@ -158,14 +158,14 @@ func decodeEvent(d *msgpack.Decoder, v reflect.Value) (err error) {
 	if secsCreatedAt, err = d.DecodeInt64(); err != nil {
 		return
 	} else {
-		m.CreatedAt = time.Unix(secsCreatedAt, 0)
+		m.CreatedAt = time.Unix(0, secsCreatedAt)
 	}
 
 	var secsUpdatedAt int64
 	if secsUpdatedAt, err = d.DecodeInt64(); err != nil {
 		return
 	} else {
-		m.UpdatedAt = time.Unix(secsUpdatedAt, 0)
+		m.UpdatedAt = time.Unix(0, secsUpdatedAt)
 	}
 
 	if err = d.Decode(&m.DataType); err != nil {
@@ -200,7 +200,7 @@ func encodeObserver(e *msgpack.Encoder, v reflect.Value) (err error) {
 		return
 	}
 
-	if err = e.EncodeInt64(m.LastDeliveredTime.Unix()); err != nil {
+	if err = e.EncodeInt64(m.LastDeliveredTime.UnixNano()); err != nil {
 		return
 	}
 
@@ -230,7 +230,7 @@ func decodeObserver(d *msgpack.Decoder, v reflect.Value) (err error) {
 	if secsLastDeliveredTime, err = d.DecodeInt64(); err != nil {
 		return
 	} else {
-		m.LastDeliveredTime = time.Unix(secsLastDeliveredTime, 0)
+		m.LastDeliveredTime = time.Unix(0, secsLastDeliveredTime)
 	}
 
 	return

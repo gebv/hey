@@ -265,7 +265,7 @@ func (m *TarantoolManager) MarkAsDelivered(userID, threadID string, times ...tim
 		t = times[0]
 	}
 
-	_, err = m.conn.Update(observerSpace, "primary", makeKey(threadID, userID), makeUpdate(newUpdateOp("=", 2, t.Unix()))) //makeUpdate(newUpdateOp("=", 3, t.Unix())))
+	_, err = m.conn.Update(observerSpace, "primary", makeKey(threadID, userID), makeUpdate(newUpdateOp("=", 2, t.UnixNano()))) //makeUpdate(newUpdateOp("=", 3, t.Unix())))
 
 	return
 }
@@ -273,7 +273,7 @@ func (m *TarantoolManager) MarkAsDelivered(userID, threadID string, times ...tim
 // RecentActivityByLastTS возвращает события позже lastts
 func (m *TarantoolManager) RecentActivityByLastTS(threadID string,
 	limit uint32, lastts time.Time) (events []Event, err error) {
-	err = m.conn.Call17Typed("by_last_ts", makeKey(threadID, lastts.Unix()), &events)
+	err = m.conn.Call17Typed("by_last_ts", makeKey(threadID, lastts.UnixNano()), &events)
 	//err = m.conn.SelectTyped(eventsSpace, "threadline_idx", 0, limit,
 	//	tarantool.IterGe, makeKey(threadID, lastts.Unix()), &events)
 	if err != nil {
