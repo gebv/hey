@@ -35,6 +35,10 @@ func RegDataType(t DataType, f func() interface{}) {
 }
 
 func FactoryDataObj(t DataType) (interface{}, error) {
+	if t == 0 {
+		return nil, nil
+	}
+
 	f, exists := types[t]
 
 	if !exists {
@@ -44,3 +48,5 @@ func FactoryDataObj(t DataType) (interface{}, error) {
 
 	return f(), nil
 }
+
+var nilFunc = func() interface{} { return nil }
