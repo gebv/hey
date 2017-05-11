@@ -96,11 +96,14 @@ func (m *TarantoolManager) get(space string, keyName string, key interface{}, ta
 // GetThread return thread by ther id
 func (m *TarantoolManager) GetThread(threadID string) (*Thread, error) {
 	var (
-		thread = new(Thread)
+		threads []Thread
 	)
 	err := m.conn.SelectTyped(threadsSpace, "primary", 0, 1, tarantool.IterEq,
-		makeKey(threadID), thread)
-	return thread, err
+		makeKey(threadID), &threads)
+	if err != nil {
+		return nil, err
+	}
+	return &threads[0], err
 }
 
 // NewThread create new thread
