@@ -14,6 +14,14 @@ var (
 
 type Thread struct {
 	ThreadID string
+
+	// if this true, each subscriber will have his own news feed,
+	// from which he can delete (but not change) the events.
+	// Only events after the subscription date are available to the user.
+	// However, you can get Thread original events feed by calling the method's
+	// Activity or RecentActivityByLastTS
+	ThreadlineEnabled bool
+
 	DataType DataType
 	Data     interface{}
 }

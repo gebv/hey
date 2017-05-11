@@ -50,11 +50,15 @@ func init() {
 func encodeThread(e *msgpack.Encoder, v reflect.Value) (err error) {
 	m := v.Interface().(Thread)
 
-	if err = e.EncodeSliceLen(3); err != nil {
+	if err = e.EncodeSliceLen(4); err != nil {
 		return
 	}
 
 	if err = e.EncodeString(m.ThreadID); err != nil {
+		return
+	}
+
+	if err = e.EncodeBool(m.ThreadlineEnabled); err != nil {
 		return
 	}
 
@@ -77,11 +81,14 @@ func decodeThread(d *msgpack.Decoder, v reflect.Value) (err error) {
 		return
 	}
 
-	if l != 3 {
+	if l != 4 {
 		return ErrMsgPackConflictFields
 	}
 
 	if m.ThreadID, err = d.DecodeString(); err != nil {
+		return
+	}
+	if m.ThreadlineEnabled, err = d.DecodeBool(); err != nil {
 		return
 	}
 	if err = d.Decode(&m.DataType); err != nil {

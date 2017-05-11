@@ -282,6 +282,11 @@ func (m *TarantoolManager) RecentActivityByLastTS(threadID string,
 	return
 }
 
+func (m *TarantoolManager) getThreadline(userID, threadID string, lastts time.Time) (events []Event, err error) {
+	err = m.conn.Call17Typed("get_threadline", makeKey(userID, threadID, lastts.UnixNano()), &events)
+	return
+}
+
 // RecentActivity возвращает события позже lastts
 func (m *TarantoolManager) RecentActivity(userID, threadID string, limit uint32) (events []Event, err error) {
 	var obs []Observer
@@ -289,7 +294,8 @@ func (m *TarantoolManager) RecentActivity(userID, threadID string, limit uint32)
 	if err != nil {
 		return
 	}
-	return m.RecentActivityByLastTS(threadID, limit, obs[0].LastDeliveredTime)
+
+	return m.getThreadline(userID, threadID, obs[0].LastDeliveredTime) // m.RecentActivityByLastTS(threadID, limit, obs[0].LastDeliveredTime)
 }
 
 // Activity события двигаться по limit,offset что предлагает tnt
@@ -317,7 +323,41 @@ func (m *TarantoolManager) NewEvent(ev *Event) (err error) {
 		return
 	}
 
-	return nil
+	// check is trhreadline enabled
+	var thread *Thread
+	thread, err = m.GetThread(ev.ThreadID)
+	if err != nil {
+		return
+	}
+	if !thread.ThreadlineEnabled {
+		return
+	}
+
+	_, err = m.conn.Call17("new_event_in_threadline", makeKey(thread.ThreadID, ev.CreatedAt.UnixNano(), ev.EventID))
+
+	// recieve all thread observers
+	// var (
+	// 	obs    []User
+	// 	tmpObs []User
+	// 	offset uint32 = 1000
+	// 	limit  uint32
+	// )
+	// for {
+	// 	tmpObs, err = m.Observers(thread.ThreadID, offset, limit)
+	// 	if err != nil {
+	// 		return
+	// 	}
+	// 	obs = append(obs, tmpObs...)
+	// 	if uint32(len(tmpObs)) != offset {
+	// 		break
+	// 	}
+	// }
+	//
+	// for _,o:=range obs {
+	//
+	// }
+
+	return
 }
 
 // GetEvent return event by their ID
