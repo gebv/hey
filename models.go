@@ -8,6 +8,7 @@ import (
 var (
 	ErrMsgPackConflictFields = errors.New("msgpack serializator: conflict num fields or another error")
 	ErrNotRegDataType        = errors.New("not registred data type")
+	ErrEmptyThreadID         = errors.New("empty thread id")
 )
 
 // Thread
