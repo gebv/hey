@@ -311,6 +311,16 @@ func (m *TarantoolManager) Activity(threadID string, limit,
 	return
 }
 
+// ThreadlineActivity range over threadline in revers order
+func (m *TarantoolManager) ThreadlineActivity(userID, threadID string, limit,
+	offset uint32) (events []Event, err error) {
+	err = m.conn.SelectTyped(threadLineSpace, "primary", limit, offset, tarantool.IterReq, makeKey(userID, threadID), &events)
+	if err != nil {
+		return
+	}
+	return
+}
+
 // NewEvent cerate new event. if id empty, wiil be generated uuid.
 // If CreatedAt zero, it will be setted to time.Now()
 func (m *TarantoolManager) NewEvent(ev *Event) (err error) {
