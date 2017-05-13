@@ -118,13 +118,16 @@ s:create_index('threadline_idx', {
     parts = {2, 'string', 3, 'integer'},
 })
 
-function by_last_ts(threrad_id, timestamp)
+function by_last_ts(threrad_id, timestamp, limit)
   local tuples = {}
+  local count = 0
 
   local events_space = prefix.."events"
-  for _, tuple in box.space.chronograph_events.index.threadline_idx:pairs({threrad_id}, {iterator = box.index.Req}) do
+  for _, tuple in box.space.chronograph_events.index.threadline_idx:pairs({threrad_id}, {iterator = box.index.REQ}) do
     if tuple[3] >= timestamp then
-      table.insert(tuples,1,tuple)
+      count = count + 1
+      table.insert(tuples, tuple)
+      if count == limit then break end
     end
 
   end
@@ -190,9 +193,9 @@ s:create_index('threadline_real_idx', {
     parts = {1, 'string', 2, 'string', 3, 'integer'},
 })
 
-// создает записи в threadline для всех подписчиков трэда
+-- создает записи в threadline для всех подписчиков трэда
 function new_event_in_threadline(thread_id, created_at, event_id)
-  for _, tuple in box.space.chronograph_subscriptions.index.primary:pairs({threrad_id}, {iterator = box.index.Req}) do
+  for _, tuple in box.space.chronograph_subscriptions.index.primary:pairs({threrad_id}, {iterator = box.index.REQ}) do
     log.info('Info insert threadline event to user %s (thread %s, event %s)', tuple[1], thread_id, event_id)
     box.space.chronograph_threadline:insert({tuple[1], thread_id, created_at, event_id})
   end
@@ -209,14 +212,17 @@ function threadline_enabled(thread_id)
   return false
 end
 
-// возвращает threadline
-function threadline_by_last_ts(user_id, thread_id, timestamp)
+-- возвращает threadline
+function threadline_by_last_ts(user_id, thread_id, timestamp, limit)
   local tuples = {}
+  local count = 0
 
 -- receive events ids
-  for _, tuple in box.space.chronograph_threadline.index.threadline_real_idx:pairs({user_id, thread_id}, {iterator = box.index.Req}) do
+  for _, tuple in box.space.chronograph_threadline.index.threadline_real_idx:pairs({user_id, thread_id}, {iterator = box.index.REQ}) do
     if tuple[3] >= timestamp then
-      table.insert(tuples,1,tuple)
+      count = count + 1
+      table.insert(tuples,tuple)
+      if count == limit then break end
     end
   end
   if next(tuples) == nil then
@@ -227,7 +233,7 @@ function threadline_by_last_ts(user_id, thread_id, timestamp)
   local events = {}
   for _, tuple in pairs(tuples) do
     event = box.space.chronograph_events.index.primary:select({tuple[4]})
-    table.insert(events, 1, unpack(event))
+    table.insert(events, unpack(event))
   end
   if next(events) == nil then
     return
@@ -236,10 +242,10 @@ function threadline_by_last_ts(user_id, thread_id, timestamp)
 end
 
 
-// проверяет включен ли у трэда threadline и возвращает соответствующий результат
-function get_threadline(user_id, thread_id, timestatmp)
+-- проверяет включен ли у трэда threadline и возвращает соответствующий результат
+function get_threadline(user_id, thread_id, timestatmp, limit)
   if threadline_enabled(thread_id) then
-    return threadline_by_last_ts(user_id, thread_id, timestatmp)
+    return threadline_by_last_ts(user_id, thread_id, timestatmp, limit)
   end
-  return by_last_ts(thread_id, timestatmp)
+  return by_last_ts(thread_id, timestatmp, limit)
 end
