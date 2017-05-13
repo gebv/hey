@@ -21,7 +21,7 @@ func main() {
 	checkErr(err)
 
 	// создаём чат
-	chat := chronograph.Thread{}
+	chat := chronograph.Thread{ThreadlineEnabled: true}
 	err = chrono.NewThread(&chat)
 	checkErr(err)
 

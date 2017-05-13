@@ -4,3 +4,4 @@ vendor
 pkg
 _*
 .env
+state

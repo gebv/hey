@@ -274,35 +274,50 @@ func (m *TarantoolManager) MarkAsDelivered(userID, threadID string, times ...tim
 }
 
 // RecentActivityByLastTS возвращает события позже lastts
-func (m *TarantoolManager) RecentActivityByLastTS(threadID string,
-	limit uint32, lastts time.Time) (events []Event, err error) {
-	err = m.conn.Call17Typed("by_last_ts", makeKey(threadID, lastts.UnixNano(), limit), &events)
-	//err = m.conn.SelectTyped(eventsSpace, "threadline_idx", 0, limit,
-	//	tarantool.IterGe, makeKey(threadID, lastts.Unix()), &events)
-	if err != nil {
-		return
-	}
-	return
-}
+// func (m *TarantoolManager) RecentActivityByLastTS(threadID string,
+// 	limit uint32, lastts time.Time) (events []Event, err error) {
+// 	err = m.conn.Call17Typed("by_last_ts", makeKey(threadID, lastts.UnixNano(), limit), &events)
+// 	//err = m.conn.SelectTyped(eventsSpace, "threadline_idx", 0, limit,
+// 	//	tarantool.IterGe, makeKey(threadID, lastts.Unix()), &events)
+// 	if err != nil {
+// 		return
+// 	}
+// 	return
+// }
 
 func (m *TarantoolManager) getThreadline(userID, threadID string, lastts time.Time, limit uint32) (events []Event, err error) {
 	err = m.conn.Call17Typed("get_threadline", makeKey(userID, threadID, lastts.UnixNano(), limit), &events)
 	return
 }
 
-// RecentActivity возвращает события позже lastts
-func (m *TarantoolManager) RecentActivity(userID, threadID string, limit uint32) (events []Event, err error) {
-	var obs []Observer
-	err = m.get(observerSpace, "primary", makeKey(threadID, userID), &obs)
+// RecentActivityByLastTS возвращает события позже lastts
+func (m *TarantoolManager) RecentActivityByLastTS(userID, threadID string, limit uint32, lastts time.Time) (events []Event, err error) {
+	//var obs []Observer
+	//err = m.get(observerSpace, "primary", makeKey(threadID, userID), &obs)
+	//if err != nil {
+	//	return
+	//}
+
+	return m.getThreadline(userID, threadID, lastts, limit) // m.RecentActivityByLastTS(threadID, limit, obs[0].LastDeliveredTime)
+}
+
+// RecentActivity
+func (m *TarantoolManager) RecentActivity(userID, threadID string, limit,
+	offset uint32) (events []Event, err error) {
+	var thread *Thread
+	thread, err = m.GetThread(threadID)
 	if err != nil {
 		return
 	}
 
-	return m.getThreadline(userID, threadID, obs[0].LastDeliveredTime, limit) // m.RecentActivityByLastTS(threadID, limit, obs[0].LastDeliveredTime)
+	if thread.ThreadlineEnabled {
+		return m.threadlineActivity(userID, threadID, limit, offset)
+	}
+	return m.activity(threadID, limit, offset)
 }
 
 // Activity события двигаться по limit,offset что предлагает tnt
-func (m *TarantoolManager) Activity(threadID string, limit,
+func (m *TarantoolManager) activity(threadID string, limit,
 	offset uint32) (events []Event, err error) {
 	err = m.conn.SelectTyped(eventsSpace, "threadline_idx", limit, offset, tarantool.IterReq, makeKey(threadID), &events)
 	if err != nil {
@@ -312,7 +327,7 @@ func (m *TarantoolManager) Activity(threadID string, limit,
 }
 
 // ThreadlineActivity range over threadline in revers order
-func (m *TarantoolManager) ThreadlineActivity(userID, threadID string, limit,
+func (m *TarantoolManager) threadlineActivity(userID, threadID string, limit,
 	offset uint32) (events []Event, err error) {
 	err = m.conn.SelectTyped(threadLineSpace, "primary", limit, offset, tarantool.IterReq, makeKey(userID, threadID), &events)
 	if err != nil {
@@ -324,6 +339,9 @@ func (m *TarantoolManager) ThreadlineActivity(userID, threadID string, limit,
 // NewEvent cerate new event. if id empty, wiil be generated uuid.
 // If CreatedAt zero, it will be setted to time.Now()
 func (m *TarantoolManager) NewEvent(ev *Event) (err error) {
+	if ev.ThreadID == "" {
+		return ErrEmptyThreadID
+	}
 	if ev.EventID == "" {
 		ev.EventID = uuid.NewV4().String()
 	}

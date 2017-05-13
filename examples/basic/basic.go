@@ -19,7 +19,8 @@ func main() {
 
 	// создаём трэд нотификаций пользователя
 	notify1 := chronograph.Thread{
-		ThreadID: "notifications:1",
+		ThreadID:          "notifications:1",
+		ThreadlineEnabled: true,
 	}
 	checkErr(err)
 

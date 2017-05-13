@@ -27,6 +27,8 @@ func TestRecentActivity(t *testing.T) {
 	err = chrono.Observe(user1.UserID, thread.ThreadID)
 	assert.NoError(t, err)
 
+	lastTs := time.Now()
+
 	event1 := &Event{
 		EventID:   "ev1",
 		ThreadID:  thread.ThreadID,
@@ -53,7 +55,7 @@ func TestRecentActivity(t *testing.T) {
 		assert.NoError(t, err)
 	}
 
-	events, err := chrono.RecentActivity(user1.UserID, thread.ThreadID, 3)
+	events, err := chrono.RecentActivityByLastTS(user1.UserID, thread.ThreadID, 3, lastTs)
 	assert.NoError(t, err)
 	assert.Equal(t, 3, len(events))
 	assert.Equal(t, "ev4", events[0].EventID)
@@ -83,6 +85,8 @@ func TestRecentActivityThreadline(t *testing.T) {
 	err = chrono.Observe(user1.UserID, thread.ThreadID)
 	assert.NoError(t, err)
 
+	lastTs := time.Now()
+
 	event1 := &Event{
 		EventID:   "ev5",
 		ThreadID:  thread.ThreadID,
@@ -109,7 +113,7 @@ func TestRecentActivityThreadline(t *testing.T) {
 		assert.NoError(t, err)
 	}
 
-	events, err := chrono.RecentActivity(user1.UserID, thread.ThreadID, 3)
+	events, err := chrono.RecentActivityByLastTS(user1.UserID, thread.ThreadID, 3, lastTs)
 	assert.NoError(t, err)
 	assert.Equal(t, 3, len(events))
 	assert.Equal(t, "ev8", events[0].EventID)
