@@ -329,7 +329,7 @@ func (m *TarantoolManager) activity(threadID string, limit,
 // ThreadlineActivity range over threadline in revers order
 func (m *TarantoolManager) threadlineActivity(userID, threadID string, limit,
 	offset uint32) (events []Event, err error) {
-	err = m.conn.SelectTyped(threadLineSpace, "primary", limit, offset, tarantool.IterReq, makeKey(userID, threadID), &events)
+	err = m.conn.Call17Typed("threadline_by_last_ts", makeKey(userID, threadID, 0, limit, offset), &events)
 	if err != nil {
 		return
 	}
