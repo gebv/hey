@@ -213,15 +213,19 @@ function threadline_enabled(thread_id)
 end
 
 -- возвращает threadline
-function threadline_by_last_ts(user_id, thread_id, timestamp, limit)
+function threadline_by_last_ts(user_id, thread_id, timestamp, limit, offset)
   local tuples = {}
   local count = 0
 
 -- receive events ids
-  for _, tuple in box.space.chronograph_threadline.index.threadline_real_idx:pairs({user_id, thread_id}, {iterator = box.index.REQ}) do
-    if tuple[3] >= timestamp then
+  for _, tuple in box.space.chronograph_threadline.index.threadline_real_idx:pairs({user_id, thread_id}, {iterator = box.index.REQ, offset = offset}) do
+    if offset == 0 and tuple[3] >= timestamp then
       count = count + 1
-      table.insert(tuples,tuple)
+      table.insert(tuples, tuple)
+      if count == limit then break end
+    else
+      count = count + 1
+      table.insert(tuples, tuple)
       if count == limit then break end
     end
   end
@@ -245,7 +249,7 @@ end
 -- проверяет включен ли у трэда threadline и возвращает соответствующий результат
 function get_threadline(user_id, thread_id, timestatmp, limit)
   if threadline_enabled(thread_id) then
-    return threadline_by_last_ts(user_id, thread_id, timestatmp, limit)
+    return threadline_by_last_ts(user_id, thread_id, timestatmp, limit, 0)
   end
   return by_last_ts(thread_id, timestatmp, limit)
 end
