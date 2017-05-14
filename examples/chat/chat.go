@@ -38,22 +38,15 @@ func main() {
 	checkErr(err)
 
 	// получаем сообщение из чата
-	events, err := chrono.RecentActivity(user1.UserID, chat.ThreadID, 10)
+	events, err := chrono.RecentActivity(user1.UserID, chat.ThreadID, 0, 10)
 	checkErr(err)
 	if len(events) != 1 {
 		log.Fatalln("len events not 1 ", len(events))
 	}
 
 	// помечаем все события прочитанными
-	err = chrono.MarkAsDelivered(user1.UserID, chat.ThreadID)
-	checkErr(err)
-
-	// получаем непрочитанные сообщение из чата, должно быть пусто
-	events, err = chrono.RecentActivity(user1.UserID, chat.ThreadID, 10)
-	checkErr(err)
-	if len(events) != 0 {
-		log.Fatalln("len events not 0", len(events))
-	}
+	// err = chrono.MarkAsDelivered(user1.UserID, chat.ThreadID)
+	// checkErr(err)
 
 }
 

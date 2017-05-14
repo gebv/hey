@@ -48,7 +48,7 @@ func main() {
 	checkErr(err)
 
 	// достаем последние события
-	events, err := chrono.RecentActivity(user1.UserID, notify1.ThreadID, 10)
+	events, err := chrono.RecentActivity(user1.UserID, notify1.ThreadID, 0, 10)
 	checkErr(err)
 	if len(events) != 1 {
 		log.Fatalln("длинна событий != 1", len(events))
