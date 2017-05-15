@@ -195,8 +195,7 @@ s:create_index('threadline_real_idx', {
 
 -- создает записи в threadline для всех подписчиков трэда
 function new_event_in_threadline(thread_id, created_at, event_id)
-  for _, tuple in box.space.chronograph_subscriptions.index.primary:pairs({threrad_id}, {iterator = box.index.REQ}) do
-    log.info('Info insert threadline event to user %s (thread %s, event %s)', tuple[1], thread_id, event_id)
+  for _, tuple in box.space.chronograph_subscriptions.index.primary:pairs({thread_id}, {iterator = box.index.REQ}) do
     box.space.chronograph_threadline:insert({tuple[1], thread_id, created_at, event_id})
   end
 end

@@ -246,18 +246,20 @@ func (m *TarantoolManager) Observes(
 	offset,
 	limit uint32) (threads []Thread, err error) {
 	var obs []Observer
-	err = m.conn.SelectTyped(observerSpace, "subscriptions_idx", offset, limit,
+	err = m.conn.SelectTyped(observerSpace, "subs_thread_id_idx", offset, limit,
 		tarantool.IterReq, makeKey(userID), &obs)
 	if err != nil {
 		return
 	}
 	for _, o := range obs {
-		var thread Thread
+		var thread []Thread
 		err = m.get(threadsSpace, "primary", makeKey(o.ThreadID), &thread)
 		if err != nil {
 			return
 		}
-		threads = append(threads, thread)
+		if len(thread) == 1 {
+			threads = append(threads, thread[0])
+		}
 	}
 	return
 }
