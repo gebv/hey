@@ -3,7 +3,7 @@ package main
 import (
 	"log"
 
-	chronograph "github.com/zhuharev/chronograph"
+	chronograph "github.com/gebv/hey"
 )
 
 func main() {

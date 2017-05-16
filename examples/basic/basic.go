@@ -3,7 +3,7 @@ package main
 import (
 	"log"
 
-	chronograph "github.com/zhuharev/chronograph"
+	chronograph "github.com/gebv/hey"
 )
 
 func main() {
@@ -19,7 +19,6 @@ func main() {
 
 	// создаём трэд нотификаций пользователя
 	notify1 := chronograph.Thread{
-		ThreadID:          "notifications:1",
 		ThreadlineEnabled: true,
 	}
 	checkErr(err)

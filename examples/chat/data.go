@@ -1,7 +1,7 @@
 package main
 
 import (
-	chronograph "github.com/zhuharev/chronograph"
+	chronograph "github.com/gebv/hey"
 	msgpack "gopkg.in/vmihailenco/msgpack.v2"
 )
 

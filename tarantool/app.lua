@@ -200,55 +200,23 @@ function new_event_in_threadline(thread_id, created_at, event_id)
   end
 end
 
-function threadline_enabled(thread_id)
-  threads = box.space.chronograph_threads.index.primary:select({thread_id})
-  if next(threads)== nil then
-    return false
-  end
-  if threads[1][2] then
-    return true
-  end
-  return false
-end
 
 -- возвращает threadline
-function threadline_by_last_ts(user_id, thread_id, timestamp, limit, offset)
-  local tuples = {}
+function threadline(user_id, thread_id, limit, offset)
+  local events = {}
   local count = 0
 
 -- receive events ids
-  for _, tuple in box.space.chronograph_threadline.index.threadline_real_idx:pairs({user_id, thread_id}, {iterator = box.index.REQ, offset = offset}) do
-    if offset == 0 and tuple[3] >= timestamp then
+  for _, tuple in box.space.chronograph_threadline.index.threadline_real_idx:pairs({user_id, thread_id}, {iterator = box.index.REQ, offset = offset, limit = limit}) do
       count = count + 1
-      table.insert(tuples, tuple)
+      event = box.space.chronograph_events.index.primary:select({tuple[4]})
+      table.insert(events, unpack(event))
       if count == limit then break end
-    else
-      count = count + 1
-      table.insert(tuples, tuple)
-      if count == limit then break end
-    end
   end
-  if next(tuples) == nil then
-    return
-  end
-
--- recieve events
-  local events = {}
-  for _, tuple in pairs(tuples) do
-    event = box.space.chronograph_events.index.primary:select({tuple[4]})
-    table.insert(events, unpack(event))
-  end
+  -- возвращаем nil, если результат пустой
   if next(events) == nil then
     return
   end
+
   return unpack(events)
-end
-
-
--- проверяет включен ли у трэда threadline и возвращает соответствующий результат
-function get_threadline(user_id, thread_id, timestatmp, limit)
-  if threadline_enabled(thread_id) then
-    return threadline_by_last_ts(user_id, thread_id, timestatmp, limit, 0)
-  end
-  return by_last_ts(thread_id, timestatmp, limit)
 end

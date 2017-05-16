@@ -1,6 +1,6 @@
 package main
 
-import chronograph "github.com/zhuharev/chronograph"
+import chronograph "github.com/gebv/hey"
 
 const (
 	NotificationDataType chronograph.DataType = 1

@@ -24,7 +24,7 @@ type Manager interface {
 	MarkAsDelivered(userID string, threadID string, times ...time.Time) error
 
 	// threadline
-	RecentActivityByLastTS(userID, threadID string, limit uint32, lastts time.Time) ([]Event, error)
+	//RecentActivityByLastTS(userID, threadID string, limit uint32, lastts time.Time) ([]Event, error)
 	//RecentActivity(userID, threadID string, limit uint32) ([]Event, error)
 	RecentActivity(userID, threadID string, offset, limit uint32) ([]Event, error)
 	//ThreadlineActivity(userID, threadID string, limit, offset uint32) (events []Event, err error)
@@ -43,4 +43,5 @@ type Manager interface {
 	// users
 	NewUser(*User) error
 	GetUser(userID string) (*User, error)
+	DeleteUser(userID string) error
 }

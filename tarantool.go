@@ -275,34 +275,6 @@ func (m *TarantoolManager) MarkAsDelivered(userID, threadID string, times ...tim
 	return
 }
 
-// RecentActivityByLastTS возвращает события позже lastts
-// func (m *TarantoolManager) RecentActivityByLastTS(threadID string,
-// 	limit uint32, lastts time.Time) (events []Event, err error) {
-// 	err = m.conn.Call17Typed("by_last_ts", makeKey(threadID, lastts.UnixNano(), limit), &events)
-// 	//err = m.conn.SelectTyped(eventsSpace, "threadline_idx", 0, limit,
-// 	//	tarantool.IterGe, makeKey(threadID, lastts.Unix()), &events)
-// 	if err != nil {
-// 		return
-// 	}
-// 	return
-// }
-
-func (m *TarantoolManager) getThreadline(userID, threadID string, lastts time.Time, limit uint32) (events []Event, err error) {
-	err = m.conn.Call17Typed("get_threadline", makeKey(userID, threadID, lastts.UnixNano(), limit), &events)
-	return
-}
-
-// RecentActivityByLastTS возвращает события позже lastts
-func (m *TarantoolManager) RecentActivityByLastTS(userID, threadID string, limit uint32, lastts time.Time) (events []Event, err error) {
-	//var obs []Observer
-	//err = m.get(observerSpace, "primary", makeKey(threadID, userID), &obs)
-	//if err != nil {
-	//	return
-	//}
-
-	return m.getThreadline(userID, threadID, lastts, limit) // m.RecentActivityByLastTS(threadID, limit, obs[0].LastDeliveredTime)
-}
-
 // RecentActivity
 func (m *TarantoolManager) RecentActivity(userID, threadID string, limit,
 	offset uint32) (events []Event, err error) {
@@ -331,7 +303,7 @@ func (m *TarantoolManager) activity(threadID string, limit,
 // ThreadlineActivity range over threadline in revers order
 func (m *TarantoolManager) threadlineActivity(userID, threadID string, limit,
 	offset uint32) (events []Event, err error) {
-	err = m.conn.Call17Typed("threadline_by_last_ts", makeKey(userID, threadID, 0, limit, offset), &events)
+	err = m.conn.Call17Typed("threadline", makeKey(userID, threadID, limit, offset), &events)
 	if err != nil {
 		return
 	}
@@ -470,5 +442,11 @@ func (m *TarantoolManager) NewUser(u *User) (err error) {
 func (m *TarantoolManager) GetUser(userID string) (u *User, err error) {
 	u = new(User)
 	err = m.get(usersSpace, "primary", makeKey(userID), u)
+	return
+}
+
+// DeleteUser delete user from db
+func (m *TarantoolManager) DeleteUser(userID string) (err error) {
+	_, err = m.conn.Delete(usersSpace, "primary", makeKey(userID))
 	return
 }
