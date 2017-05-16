@@ -1,6 +1,7 @@
 package hey
 
 import (
+	"errors"
 	"os"
 	"time"
 
@@ -21,6 +22,8 @@ var (
 	usersSpace      = DefaultTarantoolPrefix + "users"
 	sourcesSpace    = DefaultTarantoolPrefix + "sources"
 	relatedSpace    = DefaultTarantoolPrefix + "related"
+
+	ErrNotFound = errors.New("not_found")
 )
 
 type TarantoolOpts struct {
@@ -103,7 +106,10 @@ func (m *TarantoolManager) GetThread(threadID string) (*Thread, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &threads[0], err
+	if len(threads) == 0 {
+		return nil, ErrNotFound
+	}
+	return &threads[0], nil
 }
 
 // NewThread create new thread
