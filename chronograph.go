@@ -1,25 +1,20 @@
 package hey
 
-import (
-	"time"
+// Chronograph represent main api
+type Chronograph struct {
+	Manager
+}
 
-	uuid "github.com/satori/go.uuid"
-)
+// New create chronograph with default manager (tarantool)
+func New() (*Chronograph, error) {
+	manager, err := NewTarantoolManager()
+	if err != nil {
+		return nil, err
+	}
+	return NewWithManager(manager)
+}
 
-type Chronograph interface {
-	// двигаться по lastts
-	RecentActivityByLastTS(threadID string, lastts time.Time) ([]EventObserver, error)
-
-	// двигаться по limit,offset что предлагает tnt
-	RecentActivity(threadID string, limit, offset int) ([]EventObserver, error)
-
-	NewEvent(
-		threadID,
-		creatorID string,
-		eventID uuid.UUID,
-		dataType DataType,
-		data interface{},
-	) error
-
-	// и так далее по каждому из
+// NewWithManager create chronograph with passed store
+func NewWithManager(manager Manager) (*Chronograph, error) {
+	return &Chronograph{Manager: manager}, nil
 }

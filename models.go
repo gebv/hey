@@ -2,23 +2,27 @@ package hey
 
 import (
 	"errors"
-	"log"
-	"reflect"
 	"time"
-
-	uuid "github.com/satori/go.uuid"
-	msgpack "gopkg.in/vmihailenco/msgpack.v2"
 )
 
 var (
 	ErrMsgPackConflictFields = errors.New("msgpack serializator: conflict num fields or another error")
 	ErrNotRegDataType        = errors.New("not registred data type")
+	ErrEmptyThreadID         = errors.New("empty thread id")
 )
 
 // Thread
 
 type Thread struct {
 	ThreadID string
+
+	// if this true, each subscriber will have his own news feed,
+	// from which he can delete (but not change) the events.
+	// Only events after the subscription date are available to the user.
+	// However, you can get Thread original events feed by calling the method's
+	// Activity or RecentActivityByLastTS
+	ThreadlineEnabled bool
+
 	DataType DataType
 	Data     interface{}
 }
@@ -26,117 +30,54 @@ type Thread struct {
 // Events
 
 type Event struct {
-	EventID   uuid.UUID
-	ThreadID  string
-	CreatorID string
-	DataType  DataType
-	Data      interface{}
+	EventID  string
+	ThreadID string
+
 	CreatedAt time.Time
 	UpdatedAt time.Time
+
+	DataType DataType
+	Data     interface{}
 }
 
-type Threadline struct {
-	EventID   uuid.UUID
-	ThreadID  string
-	CreatedAt time.Time
-	DataType  DataType
-	Data      interface{}
-}
-
+// Observer это таблица для хранения подписок на трэды.
+// Для выбора пописок нужен итератор по UserID.
+// Для выбора подписчиков нужен итератор по ThreadID
+// lua primary: threadID, userID
 type Observer struct {
-	UserID                  string
-	ThreadID                string
-	ParentThreadID          string
-	RelatedThreadlineExists bool
-	LastTimeStamp           time.Time // unix time stamp
-	DataType                DataType
-	Data                    interface{}
+	UserID string
+	// ID трэда, на который подписан юзер
+	ThreadID          string
+	LastDeliveredTime time.Time
 }
 
-type EventObserver struct {
-	ObserverID string // related Observer.UserID
-
-	Event      Event
-	Threadline Threadline
+// Sources таблица источников каджого трэда.
+// используется при создании нового события в трэде,
+// для всех трэдов-подписчиков (TargetThreadID) этого трэда SourceThreadID
+// создаётся запись в таблице Threadline.
+type Sources struct {
+	TargetThreadID string
+	SourceThreadID string
 }
 
+// User подписчик, обозреватель,
 type User struct {
 	UserID   string
 	DataType DataType
 	Data     interface{}
 }
 
-// Serializer for thread
-
-func init() {
-	msgpack.Register(
-		reflect.TypeOf(Thread{}),
-		encodeThread,
-		decodeThread,
-	)
+// RelatedData связанные с событием данные юзера
+// lua primary: user_id, event_id
+type RelatedData struct {
+	UserID   string
+	EventID  string
+	DataType DataType
+	Data     interface{}
 }
 
-func encodeThread(e *msgpack.Encoder, v reflect.Value) error {
-	m := v.Interface().(Thread)
+type EventObserver struct {
+	Event Event
 
-	if err := e.EncodeSliceLen(3); err != nil {
-		return err
-	}
-
-	//1
-	if err := e.EncodeString(m.ThreadID); err != nil {
-		return err
-	}
-	//2
-	if err := e.EncodeUint32(uint32(m.DataType)); err != nil {
-		return err
-	}
-	//3
-	if err := e.Encode(m.Data); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func decodeThread(d *msgpack.Decoder, v reflect.Value) error {
-	var err error
-	var l int
-
-	m := v.Addr().Interface().(*Thread)
-
-	if l, err = d.DecodeSliceLen(); err != nil {
-		return err
-	}
-
-	if l != 3 {
-		return ErrMsgPackConflictFields
-	}
-
-	//1
-	if data, err := d.DecodeString(); err == nil {
-		m.ThreadID = data
-	} else {
-		return err
-	}
-	//2
-	if data, err := d.DecodeUint32(); err == nil {
-		m.DataType = DataType(data)
-	} else {
-		return err
-	}
-
-	//5
-	m.Data, err = FactoryDataObj(m.DataType)
-	if err == nil {
-		if err = d.Decode(&m.Data); err != nil {
-			return err
-		}
-	} else {
-		d.Skip()
-		log.Printf("hey: not supported data type DataType(%d)", m.DataType)
-		return ErrNotRegDataType
-	}
-
-	return nil
+	RelatedData RelatedData
 }
