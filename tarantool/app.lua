@@ -118,25 +118,6 @@ s:create_index('threadline_idx', {
     parts = {2, 'string', 3, 'integer'},
 })
 
-function by_last_ts(threrad_id, timestamp, limit)
-  local tuples = {}
-  local count = 0
-
-  local events_space = prefix.."events"
-  for _, tuple in box.space.chronograph_events.index.threadline_idx:pairs({threrad_id}, {iterator = box.index.REQ}) do
-    if tuple[3] >= timestamp then
-      count = count + 1
-      table.insert(tuples, tuple)
-      if count == limit then break end
-    end
-
-  end
-  if next(tuples) == nil then
-    return
-  end
-  return unpack(tuples)
-end
-
 --
 -- users
 --
@@ -202,16 +183,13 @@ end
 
 
 -- возвращает threadline
-function threadline(user_id, thread_id, limit, offset)
+function threadline(user_id, thread_id, lim, off)
   local events = {}
-  local count = 0
 
 -- receive events ids
-  for _, tuple in box.space.chronograph_threadline.index.threadline_real_idx:pairs({user_id, thread_id}, {iterator = box.index.REQ, offset = offset, limit = limit}) do
-      count = count + 1
-      event = box.space.chronograph_events.index.primary:select({tuple[4]})
-      table.insert(events, unpack(event))
-      if count == limit then break end
+  for _, tuple in pairs(box.space.chronograph_threadline.index.threadline_real_idx:select({user_id, thread_id}, {iterator = box.index.REQ, offset = off, limit = lim})) do
+      event = box.space.chronograph_events.index.primary:get({tuple[4]})
+      table.insert(events, event)
   end
   -- возвращаем nil, если результат пустой
   if next(events) == nil then

@@ -275,21 +275,6 @@ func (m *TarantoolManager) MarkAsDelivered(userID, threadID string, times ...tim
 	return
 }
 
-// RecentActivity
-func (m *TarantoolManager) RecentActivity(userID, threadID string, limit,
-	offset uint32) (events []Event, err error) {
-	var thread *Thread
-	thread, err = m.GetThread(threadID)
-	if err != nil {
-		return
-	}
-
-	if thread.ThreadlineEnabled {
-		return m.threadlineActivity(userID, threadID, limit, offset)
-	}
-	return m.activity(threadID, limit, offset)
-}
-
 // Activity события двигаться по limit,offset что предлагает tnt
 func (m *TarantoolManager) activity(threadID string, limit,
 	offset uint32) (events []Event, err error) {
@@ -303,11 +288,26 @@ func (m *TarantoolManager) activity(threadID string, limit,
 // ThreadlineActivity range over threadline in revers order
 func (m *TarantoolManager) threadlineActivity(userID, threadID string, limit,
 	offset uint32) (events []Event, err error) {
-	err = m.conn.Call17Typed("threadline", makeKey(userID, threadID, limit, offset), &events)
+	err = m.conn.Call17Typed("threadline", makeKey(userID, threadID, uint64(limit), uint64(offset)), &events)
 	if err != nil {
 		return
 	}
 	return
+}
+
+// RecentActivity
+func (m *TarantoolManager) RecentActivity(userID, threadID string, limit,
+	offset uint32) (events []Event, err error) {
+	var thread *Thread
+	thread, err = m.GetThread(threadID)
+	if err != nil {
+		return
+	}
+
+	if thread.ThreadlineEnabled {
+		return m.threadlineActivity(userID, threadID, limit, offset)
+	}
+	return m.activity(threadID, limit, offset)
 }
 
 // NewEvent cerate new event. if id empty, wiil be generated uuid.

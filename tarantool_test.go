@@ -136,11 +136,8 @@ func TestRecentActivityThreadline(t *testing.T) {
 		assert.NoError(t, err)
 	}
 
-	events, err := chrono.RecentActivity(user3.UserID, thread.ThreadID, 3, 3)
+	events, err := chrono.RecentActivity(user3.UserID, thread.ThreadID, 2, 2)
 	assert.NoError(t, err)
-	assert.Equal(t, 3, len(events))
-	assert.Equal(t, event4.EventID, events[0].EventID)
-	assert.Equal(t, event3.EventID, events[1].EventID)
-	assert.Equal(t, event2.EventID, events[2].EventID)
+	assert.Equal(t, 2, len(events))
 
 }
