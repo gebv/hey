@@ -23,6 +23,8 @@ func TestRecentActivity(t *testing.T) {
 	err = chrono.Observe(user1.UserID, thread.ThreadID)
 	assert.NoError(t, err)
 
+	ts := time.Now()
+
 	event1 := &Event{
 		ThreadID:  thread.ThreadID,
 		CreatedAt: time.Now(),
@@ -55,6 +57,10 @@ func TestRecentActivity(t *testing.T) {
 	assert.Equal(t, event4.EventID, events[0].EventID)
 	assert.Equal(t, event3.EventID, events[1].EventID)
 	assert.Equal(t, event2.EventID, events[2].EventID)
+
+	cnt, err := chrono.CountEvents(user1.UserID, thread.ThreadID, ts)
+	assert.NoError(t, err)
+	assert.Equal(t, 5, cnt)
 }
 
 func TestRecentActivityThreadline(t *testing.T) {
@@ -108,8 +114,10 @@ func TestRecentActivityThreadline(t *testing.T) {
 	// возвращает потоки за которыми наблюдает пользователь
 	threads, err := chrono.Observes(user3.UserID, 0, 2)
 	assert.NoError(t, err)
-	assert.Equal(t, 2, len(threads))
-	// TODO: проверить гарантированный порядок добавления тредов под наблюдение (после правки models.Observer)
+
+	assert.Equal(t, 2, len(observes))
+	assert.Equal(t, thread2.ThreadID, observes[0].ThreadID)
+	assert.Equal(t, thread.ThreadID, observes[1].ThreadID)
 
 	// невозможно проверить
 	now := time.Now()

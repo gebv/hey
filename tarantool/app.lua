@@ -72,6 +72,7 @@ s = box.schema.create_space(prefix.."subscriptions", {
     if_not_exists=true,
 })
 
+-- подписчики
 s:create_index('primary', {
     if_not_exists=true,
     type = 'tree',
@@ -79,12 +80,12 @@ s:create_index('primary', {
     parts = {2, 'string', 1, 'string'},
 })
 
--- for ThreadObservers
+-- подписки
 s:create_index('subs_thread_id_idx', {
     if_not_exists=true,
     type = 'tree',
     --  user_id thread_id,
-    parts = {1, 'string', 2, 'string'},
+    parts = {1, 'string', 4, 'integer', 2, 'string'},
 })
 
 
@@ -197,4 +198,33 @@ function threadline(user_id, thread_id, lim, off)
   end
 
   return unpack(events)
+end
+
+function threadline_enabled(thread_id)
+  threads = box.space.chronograph_threads.index.primary:select({thread_id})
+  if next(threads)== nil then
+    return false
+  end
+  if threads[1][2] then
+    return true
+  end
+  return false
+end
+
+function count_events(user_id, thread_id, time)
+  cnt = 0
+  if threadline_enabled(thread_id) then
+    for _, tuple in pairs(box.space.chronograph_threadline.index.threadline_real_idx:select({user_id, thread_id}, {iterator = box.index.REQ})) do
+        if tuple[3] > time then
+          cnt = cnt + 1
+        end
+    end
+  else
+    for _, tuple in box.space.chronograph_events.index.threadline_idx:pairs({threrad_id}, {iterator = box.index.REQ}) do
+      if tuple[3] > time then
+        cnt = cnt + 1
+      end
+    end
+  end
+  return cnt
 end
