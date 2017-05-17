@@ -1,6 +1,7 @@
 package hey
 
 import (
+	"errors"
 	"os"
 	"time"
 
@@ -21,6 +22,8 @@ var (
 	usersSpace      = DefaultTarantoolPrefix + "users"
 	sourcesSpace    = DefaultTarantoolPrefix + "sources"
 	relatedSpace    = DefaultTarantoolPrefix + "related"
+
+	ErrNotFound = errors.New("not_found")
 )
 
 type TarantoolOpts struct {
@@ -61,32 +64,36 @@ type TarantoolManager struct {
 	conn *tarantool.Connection
 }
 
-// NewTarantoolManager return manager setupped from env or optsё
-func NewTarantoolManager(opts ...TarantoolOpts) (*TarantoolManager, error) {
-
-	var (
-		opt TarantoolOpts
-		err error
-	)
-
-	if len(opts) > 0 {
-		opt = opts[0]
-	} else {
-		opt, err = setupFromENV()
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	client, err := tarantool.Connect(opt.Server, opt.toOpts())
-	if err != nil {
-		return nil, err
-	}
-
-	_, err = client.Ping()
-
-	return &TarantoolManager{conn: client}, err
+func NewTarantoolManager(conn *tarantool.Connection) *TarantoolManager {
+	return &TarantoolManager{conn: conn}
 }
+
+// // NewTarantoolManager return manager setupped from env or optsё
+// func NewTarantoolManager(opts ...TarantoolOpts) (*TarantoolManager, error) {
+
+// 	var (
+// 		opt TarantoolOpts
+// 		err error
+// 	)
+
+// 	if len(opts) > 0 {
+// 		opt = opts[0]
+// 	} else {
+// 		opt, err = setupFromENV()
+// 		if err != nil {
+// 			return nil, err
+// 		}
+// 	}
+
+// 	client, err := tarantool.Connect(opt.Server, opt.toOpts())
+// 	if err != nil {
+// 		return nil, err
+// 	}
+
+// 	_, err = client.Ping()
+
+// 	return &TarantoolManager{conn: client}, err
+// }
 
 // util
 func (m *TarantoolManager) get(space string, keyName string, key interface{}, target interface{}) error {
@@ -103,7 +110,10 @@ func (m *TarantoolManager) GetThread(threadID string) (*Thread, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &threads[0], err
+	if len(threads) == 0 {
+		return nil, ErrNotFound
+	}
+	return &threads[0], nil
 }
 
 // NewThread create new thread

@@ -111,8 +111,10 @@ func TestRecentActivityThreadline(t *testing.T) {
 	err = chrono.Observe(user3.UserID, thread2.ThreadID)
 	assert.NoError(t, err)
 
-	observes, err := chrono.Observes(user3.UserID, 0, 2)
+	// возвращает потоки за которыми наблюдает пользователь
+	threads, err := chrono.Observes(user3.UserID, 0, 2)
 	assert.NoError(t, err)
+
 	assert.Equal(t, 2, len(observes))
 	assert.Equal(t, thread2.ThreadID, observes[0].ThreadID)
 	assert.Equal(t, thread.ThreadID, observes[1].ThreadID)

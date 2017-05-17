@@ -3,7 +3,8 @@ all:
 	mkdir -p state/tarantool/conf
 	cp ../../tarantool/app.lua state/tarantool/conf/
 	cp ../../tarantool/docker-compose.yml ./
-	sudo docker-compose start tarantool
+	-docker-compose up -d tarantool
+	sleep 1
 	TARANTOOL_SERVER=127.0.0.1:3301 TARANTOOL_USER_NAME=chrono TARANTOOL_USER_PASSWORD=chrono go run *.go
 
 clean:
