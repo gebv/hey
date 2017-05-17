@@ -64,32 +64,36 @@ type TarantoolManager struct {
 	conn *tarantool.Connection
 }
 
-// NewTarantoolManager return manager setupped from env or optsё
-func NewTarantoolManager(opts ...TarantoolOpts) (*TarantoolManager, error) {
-
-	var (
-		opt TarantoolOpts
-		err error
-	)
-
-	if len(opts) > 0 {
-		opt = opts[0]
-	} else {
-		opt, err = setupFromENV()
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	client, err := tarantool.Connect(opt.Server, opt.toOpts())
-	if err != nil {
-		return nil, err
-	}
-
-	_, err = client.Ping()
-
-	return &TarantoolManager{conn: client}, err
+func NewTarantoolManager(conn *tarantool.Connection) *TarantoolManager {
+	return &TarantoolManager{conn: conn}
 }
+
+// // NewTarantoolManager return manager setupped from env or optsё
+// func NewTarantoolManager(opts ...TarantoolOpts) (*TarantoolManager, error) {
+
+// 	var (
+// 		opt TarantoolOpts
+// 		err error
+// 	)
+
+// 	if len(opts) > 0 {
+// 		opt = opts[0]
+// 	} else {
+// 		opt, err = setupFromENV()
+// 		if err != nil {
+// 			return nil, err
+// 		}
+// 	}
+
+// 	client, err := tarantool.Connect(opt.Server, opt.toOpts())
+// 	if err != nil {
+// 		return nil, err
+// 	}
+
+// 	_, err = client.Ping()
+
+// 	return &TarantoolManager{conn: client}, err
+// }
 
 // util
 func (m *TarantoolManager) get(space string, keyName string, key interface{}, target interface{}) error {
