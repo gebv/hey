@@ -195,7 +195,7 @@ func decodeEvent(d *msgpack.Decoder, v reflect.Value) (err error) {
 func encodeObserver(e *msgpack.Encoder, v reflect.Value) (err error) {
 	m := v.Interface().(Observer)
 
-	if err = e.EncodeSliceLen(3); err != nil {
+	if err = e.EncodeSliceLen(4); err != nil {
 		return
 	}
 
@@ -211,6 +211,10 @@ func encodeObserver(e *msgpack.Encoder, v reflect.Value) (err error) {
 		return
 	}
 
+	if err = e.EncodeInt64(m.JoinTime.UnixNano()); err != nil {
+		return
+	}
+
 	return
 }
 
@@ -222,7 +226,7 @@ func decodeObserver(d *msgpack.Decoder, v reflect.Value) (err error) {
 		return
 	}
 
-	if l != 3 {
+	if l != 4 {
 		return ErrMsgPackConflictFields
 	}
 
@@ -238,6 +242,13 @@ func decodeObserver(d *msgpack.Decoder, v reflect.Value) (err error) {
 		return
 	} else {
 		m.LastDeliveredTime = time.Unix(0, secsLastDeliveredTime)
+	}
+
+	var secsJoinTime int64
+	if secsJoinTime, err = d.DecodeInt64(); err != nil {
+		return
+	} else {
+		m.JoinTime = time.Unix(0, secsJoinTime)
 	}
 
 	return

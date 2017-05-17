@@ -205,6 +205,7 @@ func (m *TarantoolManager) Observe(userID, threadID string) error {
 		UserID:            userID,
 		ThreadID:          threadID,
 		LastDeliveredTime: time.Now(),
+		JoinTime:          time.Now(),
 	}
 	_, err := m.conn.Insert(observerSpace, &obs)
 	return err
@@ -224,7 +225,7 @@ func (m *TarantoolManager) Ignore(userID, threadID string) (err error) {
 // Observers возвращает подписчиков трэда
 func (m *TarantoolManager) Observers(threadID string, offset, limit uint32) (users []User, err error) {
 	var obs []Observer
-	err = m.conn.SelectTyped(observerSpace, "primary", offset, limit, tarantool.IterEq, makeKey(threadID), &obs)
+	err = m.conn.SelectTyped(observerSpace, "primary", offset, limit, tarantool.IterReq, makeKey(threadID), &obs)
 	if err != nil {
 		return
 	}
@@ -251,14 +252,15 @@ func (m *TarantoolManager) Observes(
 	if err != nil {
 		return
 	}
-	for _, o := range obs {
+	threads = make([]Thread, len(obs))
+	for i, o := range obs {
 		var thread []Thread
 		err = m.get(threadsSpace, "primary", makeKey(o.ThreadID), &thread)
 		if err != nil {
 			return
 		}
 		if len(thread) == 1 {
-			threads = append(threads, thread[0])
+			threads[i] = thread[0]
 		}
 	}
 	return
@@ -310,6 +312,16 @@ func (m *TarantoolManager) RecentActivity(userID, threadID string, limit,
 	return m.activity(threadID, limit, offset)
 }
 
+// CountEvents возвращает количество событий после даты t
+func (m *TarantoolManager) CountEvents(userID, threadID string, t time.Time) (int, error) {
+	var counts []int
+	err := m.conn.Call17Typed("count_events", makeKey(userID, threadID, t.Nanosecond()), &counts)
+	if err != nil {
+		return 0, err
+	}
+	return int(counts[0]), nil
+}
+
 // NewEvent cerate new event. if id empty, wiil be generated uuid.
 // If CreatedAt zero, it will be setted to time.Now()
 func (m *TarantoolManager) NewEvent(ev *Event) (err error) {
@@ -322,6 +334,7 @@ func (m *TarantoolManager) NewEvent(ev *Event) (err error) {
 	if ev.CreatedAt.IsZero() {
 		ev.CreatedAt = time.Now()
 	}
+	ev.UpdatedAt = time.Now()
 
 	_, err = m.conn.Insert(eventsSpace, ev)
 	if err != nil {
@@ -396,6 +409,14 @@ func (m *TarantoolManager) UpdateEvent(ev *Event) (err error) {
 	return nil
 }
 
+func (m *TarantoolManager) updateEventUpdatedAt(eventID string) error {
+	_, err := m.conn.Update(threadLineSpace, "primary", makeKey(eventID), makeUpdate(newUpdateOp("=", 4, time.Now().UnixNano())))
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (m *TarantoolManager) DeleteEvent(eventID string) (err error) {
 	// todo удалить из threadline связанные записи
 	_, err = m.conn.Delete(eventsSpace, "primary", makeKey(eventID))
@@ -408,6 +429,10 @@ func (m *TarantoolManager) DeleteEvent(eventID string) (err error) {
 // SetRelatedData set data to tarantool
 func (m *TarantoolManager) SetRelatedData(rel *RelatedData) (err error) {
 	_, err = m.conn.Replace(relatedSpace, rel)
+	if err != nil {
+		return err
+	}
+	err = m.updateEventUpdatedAt(rel.EventID)
 	return
 }
 

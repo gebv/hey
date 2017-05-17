@@ -49,6 +49,7 @@ type Observer struct {
 	// ID трэда, на который подписан юзер
 	ThreadID          string
 	LastDeliveredTime time.Time
+	JoinTime          time.Time
 }
 
 // Sources таблица источников каджого трэда.
