@@ -1,6 +1,7 @@
 package hey
 
 import (
+	"errors"
 	"os"
 	"time"
 
@@ -21,6 +22,8 @@ var (
 	usersSpace      = DefaultTarantoolPrefix + "users"
 	sourcesSpace    = DefaultTarantoolPrefix + "sources"
 	relatedSpace    = DefaultTarantoolPrefix + "related"
+
+	ErrNotFound = errors.New("not_found")
 )
 
 type TarantoolOpts struct {
@@ -61,8 +64,12 @@ type TarantoolManager struct {
 	conn *tarantool.Connection
 }
 
-// NewTarantoolManager return manager setupped from env or optsё
-func NewTarantoolManager(opts ...TarantoolOpts) (*TarantoolManager, error) {
+func NewTarantoolManager(conn *tarantool.Connection) *TarantoolManager {
+	return &TarantoolManager{conn: conn}
+}
+
+// NewTarantoolManagerWithOpts return manager setupped from env or optsё
+func NewTarantoolManagerWithOpts(opts ...TarantoolOpts) (*TarantoolManager, error) {
 
 	var (
 		opt TarantoolOpts
@@ -103,7 +110,10 @@ func (m *TarantoolManager) GetThread(threadID string) (*Thread, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &threads[0], err
+	if len(threads) == 0 {
+		return nil, ErrNotFound
+	}
+	return &threads[0], nil
 }
 
 // NewThread create new thread
@@ -313,13 +323,20 @@ func (m *TarantoolManager) RecentActivity(userID, threadID string, limit,
 }
 
 // CountEvents возвращает количество событий после даты t
-func (m *TarantoolManager) CountEvents(userID, threadID string, t time.Time) (int, error) {
+func (m *TarantoolManager) CountEvents(userID, threadID string, t time.Time, limit, offset uint32) (count uint32, next bool, err error) {
 	var counts []int
-	err := m.conn.Call17Typed("count_events", makeKey(userID, threadID, t.Nanosecond()), &counts)
+	err = m.conn.Call17Typed("count_events", makeKey(userID, threadID, t.Nanosecond(), limit, offset), &counts)
 	if err != nil {
-		return 0, err
+		return 0, false, err
 	}
-	return int(counts[0]), nil
+	if len(counts) == 0 {
+		return 0, false, ErrEmptyResponse
+	}
+	count = uint32(counts[0]) + offset
+	if count == offset+limit {
+		next = true
+	}
+	return
 }
 
 // NewEvent cerate new event. if id empty, wiil be generated uuid.

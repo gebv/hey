@@ -16,8 +16,11 @@ tests:
 	mkdir -p state/tarantool/conf
 	cp tarantool/app.lua state/tarantool/conf/
 	cp tarantool/docker-compose.yml ./
-	sudo docker-compose start tarantool
-	TARANTOOL_SERVER=127.0.0.1:3301 TARANTOOL_USER_NAME=chrono TARANTOOL_USER_PASSWORD=chrono go test
+	-docker-compose up -d tarantool
+	TARANTOOL_SERVER=127.0.0.1:3301 \
+	TARANTOOL_USER_NAME=chrono \
+	TARANTOOL_USER_PASSWORD=chrono \
+		go test -v -run=TestTarantoolManager_RecentActivity
 
 clean:
 	sudo docker-compose stop tarantool

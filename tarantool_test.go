@@ -58,9 +58,10 @@ func TestRecentActivity(t *testing.T) {
 	assert.Equal(t, event3.EventID, events[1].EventID)
 	assert.Equal(t, event2.EventID, events[2].EventID)
 
-	cnt, err := chrono.CountEvents(user1.UserID, thread.ThreadID, ts)
+	cnt, next, err := chrono.CountEvents(user1.UserID, thread.ThreadID, ts, 4, 0)
 	assert.NoError(t, err)
-	assert.Equal(t, 5, cnt)
+	assert.Equal(t, uint32(4), cnt)
+	assert.True(t, next)
 }
 
 func TestRecentActivityThreadline(t *testing.T) {
@@ -111,11 +112,12 @@ func TestRecentActivityThreadline(t *testing.T) {
 	err = chrono.Observe(user3.UserID, thread2.ThreadID)
 	assert.NoError(t, err)
 
-	observes, err := chrono.Observes(user3.UserID, 0, 2)
+	// возвращает потоки за которыми наблюдает пользователь
+	threads, err := chrono.Observes(user3.UserID, 0, 2)
 	assert.NoError(t, err)
-	assert.Equal(t, 2, len(observes))
-	assert.Equal(t, thread2.ThreadID, observes[0].ThreadID)
-	assert.Equal(t, thread.ThreadID, observes[1].ThreadID)
+	assert.Equal(t, 2, len(threads))
+	assert.Equal(t, thread2.ThreadID, threads[0].ThreadID)
+	assert.Equal(t, thread.ThreadID, threads[1].ThreadID)
 
 	// невозможно проверить
 	now := time.Now()

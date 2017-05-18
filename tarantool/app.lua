@@ -211,18 +211,22 @@ function threadline_enabled(thread_id)
   return false
 end
 
-function count_events(user_id, thread_id, time)
+function count_events(user_id, thread_id, time, limit, offset)
   cnt = 0
   if threadline_enabled(thread_id) then
-    for _, tuple in pairs(box.space.chronograph_threadline.index.threadline_real_idx:select({user_id, thread_id}, {iterator = box.index.REQ})) do
+    for _, tuple in pairs(box.space.chronograph_threadline.index.threadline_real_idx:select({user_id, thread_id}, {iterator = box.index.REQ, limit = limit, offset = offset})) do
         if tuple[3] > time then
           cnt = cnt + 1
+        else
+          break
         end
     end
   else
-    for _, tuple in box.space.chronograph_events.index.threadline_idx:pairs({threrad_id}, {iterator = box.index.REQ}) do
+    for _, tuple in pairs(box.space.chronograph_events.index.threadline_idx:select({threrad_id}, {iterator = box.index.REQ, limit = limit, offset = offset})) do
       if tuple[3] > time then
         cnt = cnt + 1
+      else
+        break
       end
     end
   end

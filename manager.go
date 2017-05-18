@@ -28,7 +28,7 @@ type Manager interface {
 	//RecentActivity(userID, threadID string, limit uint32) ([]Event, error)
 	RecentActivity(userID, threadID string, limit, offset uint32) ([]Event, error)
 	//ThreadlineActivity(userID, threadID string, limit, offset uint32) (events []Event, err error)
-	CountEvents(userID, threadID string, time time.Time) (int, error)
+	CountEvents(userID, threadID string, time time.Time, limit, offset uint32) (uint32, bool, error)
 
 	// events
 	NewEvent(*Event) error
