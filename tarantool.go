@@ -120,25 +120,12 @@ func (m *TarantoolManager) GetThread(threadID string) (*Thread, error) {
 // it return error is thread already exists
 // if id empty, will be generated uuid
 func (m *TarantoolManager) NewThread(thread *Thread) (err error) {
-	// err = m.conn.SelectTyped(threadsSpace, "primary", 0, 1,
-	// 	tarantool.IterEq, makeIndex(threadID), &thread)
-	// if err != nil {
-	// 	return
-	// }
-	// // thread already exists
-	// if thread.ThreadID == threadID {
-	// 	return ErrAlreadyExists
-	// }
 	if thread.ThreadID == "" {
 		thread.ThreadID = uuid.NewV4().String()
 	}
 
 	_, err = m.conn.Insert(threadsSpace, thread)
-	if err != nil {
-		return
-	}
-
-	return nil
+	return
 }
 
 func (m *TarantoolManager) UpdateThread(thread *Thread) error {
@@ -149,64 +136,10 @@ func (m *TarantoolManager) UpdateThread(thread *Thread) error {
 // DeleteThread удаляет трэд, подписки и связанные события
 // 1. Удаляем все записи из events
 // 2. Удаляем все подписки на трэд
-func (m *TarantoolManager) DeleteThread(threadID string) error {
+func (m *TarantoolManager) DeleteThread(threadID string) (err error) {
 	// delete
-	m.conn.Delete(threadsSpace, "primary", makeKey(threadID))
-	return nil
-}
-
-// AddSource подписывает трэд на другой трэд
-func (m *TarantoolManager) AddSource(dstThread, sourceThread string) (err error) {
-	src := Sources{SourceThreadID: sourceThread, TargetThreadID: dstThread}
-	_, err = m.conn.Insert(sourcesSpace, &src)
-	if err != nil {
-		return
-	}
-	return nil
-}
-
-func (m *TarantoolManager) GetSources(referThreadID string, offset, limit uint32) (threads []Thread, err error) {
-	var sources []Sources
-	err = m.conn.SelectTyped(sourcesSpace, "primary", offset, limit, tarantool.IterReq, makeKey(referThreadID), &sources)
-	if err != nil {
-		return
-	}
-	for _, src := range sources {
-		var thread Thread
-		err = m.get(threadsSpace, "primary", makeKey(src.SourceThreadID), &thread)
-		if err != nil {
-			return
-		}
-		threads = append(threads, thread)
-	}
+	_, err = m.conn.Delete(threadsSpace, "primary", makeKey(threadID))
 	return
-}
-
-// Трэды, у которого данный трэд в источниках
-func (m *TarantoolManager) GetRefers(threadID string, offset, limit uint32) (threads []Thread, err error) {
-	var sources []Sources
-	err = m.conn.SelectTyped(sourcesSpace, "sources_idx", offset, limit, tarantool.IterReq, makeKey(threadID), &sources)
-	if err != nil {
-		return
-	}
-	for _, src := range sources {
-		var thread Thread
-		err = m.get(threadsSpace, "primary", makeKey(src.SourceThreadID), &thread)
-		if err != nil {
-			return
-		}
-		threads = append(threads, thread)
-	}
-	return
-}
-
-// RemoveSource отписывает трэд
-func (m *TarantoolManager) RemoveSource(dstThread, sourceThread string) (err error) {
-	_, err = m.conn.Delete(sourcesSpace, "primary", makeKey(dstThread, sourceThread))
-	if err != nil {
-		return err
-	}
-	return nil
 }
 
 // Observe - подписка конкретного юзера на трэд
@@ -223,13 +156,8 @@ func (m *TarantoolManager) Observe(userID, threadID string) error {
 
 // Ignore удаляет подписку на трэд
 func (m *TarantoolManager) Ignore(userID, threadID string) (err error) {
-
 	_, err = m.conn.Delete(observerSpace, "primary", makeKey(threadID, userID))
-	if err != nil {
-		return err
-	}
-
-	return err
+	return
 }
 
 // Observers возвращает подписчиков трэда
@@ -246,7 +174,9 @@ func (m *TarantoolManager) Observers(threadID string, offset, limit uint32) (use
 		if err != nil {
 			return
 		}
-		users = append(users, u[0])
+		if len(u) == 1 {
+			users = append(users, u[0])
+		}
 	}
 	return
 }
@@ -307,7 +237,7 @@ func (m *TarantoolManager) threadlineActivity(userID, threadID string, limit,
 	return
 }
 
-// RecentActivity
+// RecentActivity returns last events
 func (m *TarantoolManager) RecentActivity(userID, threadID string, limit,
 	offset uint32) (events []Event, err error) {
 	var thread *Thread
@@ -369,29 +299,6 @@ func (m *TarantoolManager) NewEvent(ev *Event) (err error) {
 	}
 
 	_, err = m.conn.Call17("new_event_in_threadline", makeKey(thread.ThreadID, ev.CreatedAt.UnixNano(), ev.EventID))
-
-	// recieve all thread observers
-	// var (
-	// 	obs    []User
-	// 	tmpObs []User
-	// 	offset uint32 = 1000
-	// 	limit  uint32
-	// )
-	// for {
-	// 	tmpObs, err = m.Observers(thread.ThreadID, offset, limit)
-	// 	if err != nil {
-	// 		return
-	// 	}
-	// 	obs = append(obs, tmpObs...)
-	// 	if uint32(len(tmpObs)) != offset {
-	// 		break
-	// 	}
-	// }
-	//
-	// for _,o:=range obs {
-	//
-	// }
-
 	return
 }
 
@@ -426,8 +333,8 @@ func (m *TarantoolManager) UpdateEvent(ev *Event) (err error) {
 	return nil
 }
 
-func (m *TarantoolManager) updateEventUpdatedAt(eventID string) error {
-	_, err := m.conn.Update(threadLineSpace, "primary", makeKey(eventID), makeUpdate(newUpdateOp("=", 4, time.Now().UnixNano())))
+func (m *TarantoolManager) updateEventUpdatedAt(userID, eventID string) error {
+	_, err := m.conn.Update(threadLineSpace, "_updated_idx", makeKey(userID, eventID), makeUpdate(newUpdateOp("=", 4, time.Now().UnixNano())))
 	if err != nil {
 		return err
 	}
@@ -449,7 +356,7 @@ func (m *TarantoolManager) SetRelatedData(rel *RelatedData) (err error) {
 	if err != nil {
 		return err
 	}
-	err = m.updateEventUpdatedAt(rel.EventID)
+	err = m.updateEventUpdatedAt(rel.UserID, rel.EventID)
 	return
 }
 
@@ -461,7 +368,9 @@ func (m *TarantoolManager) GetRelatedDatas(userID string, events ...Event) (obs 
 		if err != nil {
 			return
 		}
-		obs = append(obs, EventObserver{Event: ev, RelatedData: rel[0]})
+		if len(rel) == 1 {
+			obs = append(obs, EventObserver{Event: ev, RelatedData: rel[0]})
+		}
 	}
 
 	return

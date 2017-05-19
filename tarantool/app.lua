@@ -175,6 +175,14 @@ s:create_index('threadline_real_idx', {
     parts = {1, 'string', 2, 'string', 3, 'integer'},
 })
 
+s:create_index('_updated_idx', {
+    if_not_exists=true,
+    type = 'tree',
+    unique = true,
+    -- user_id, event_id
+    parts = {1, 'string', 4, 'string'},
+})
+
 -- создает записи в threadline для всех подписчиков трэда
 function new_event_in_threadline(thread_id, created_at, event_id)
   for _, tuple in box.space.chronograph_subscriptions.index.primary:pairs({thread_id}, {iterator = box.index.REQ}) do

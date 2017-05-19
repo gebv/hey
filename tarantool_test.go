@@ -75,6 +75,9 @@ func TestRecentActivityThreadline(t *testing.T) {
 	err = chrono.NewThread(thread)
 	assert.NoError(t, err)
 
+	thread, err = chrono.GetThread(thread.ThreadID)
+	assert.NoError(t, err)
+
 	thread2 := &Thread{}
 	err = chrono.NewThread(thread2)
 	assert.NoError(t, err)
@@ -150,4 +153,22 @@ func TestRecentActivityThreadline(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 2, len(events))
 
+	RegDataType(1, func() interface{} {
+		return &TestData{}
+	})
+
+	rd := RelatedData{
+		UserID:   user1.UserID,
+		EventID:  event1.EventID,
+		DataType: 1,
+		Data:     TestData{"hello"},
+	}
+
+	err = chrono.SetRelatedData(&rd)
+	assert.NoError(t, err)
+
+}
+
+type TestData struct {
+	Msg string
 }
