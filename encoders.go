@@ -1,7 +1,6 @@
 package hey
 
 import (
-	"log"
 	"reflect"
 	"time"
 
@@ -62,11 +61,11 @@ func encodeThread(e *msgpack.Encoder, v reflect.Value) (err error) {
 		return
 	}
 
-	if err = e.Encode(m.DataType); err != nil {
+	if err = e.EncodeString(m.DataType); err != nil {
 		return
 	}
 
-	if err = e.Encode(m.Data); err != nil {
+	if err = e.EncodeBytes(m.Data); err != nil {
 		return
 	}
 
@@ -91,17 +90,10 @@ func decodeThread(d *msgpack.Decoder, v reflect.Value) (err error) {
 	if m.ThreadlineEnabled, err = d.DecodeBool(); err != nil {
 		return
 	}
-	if err = d.Decode(&m.DataType); err != nil {
+	if m.DataType, err = d.DecodeString(); err != nil {
 		return
 	}
-
-	if m.Data, err = FactoryDataObj(m.DataType); err != nil {
-		if err = d.Skip(); err != nil {
-			return
-		}
-		log.Printf("hey: not supported data type DataType(%d)", m.DataType)
-		return ErrNotRegDataType
-	} else if err = d.Decode(&m.Data); err != nil {
+	if m.Data, err = d.DecodeBytes(); err != nil {
 		return
 	}
 
@@ -131,11 +123,11 @@ func encodeEvent(e *msgpack.Encoder, v reflect.Value) (err error) {
 		return
 	}
 
-	if err = e.Encode(m.DataType); err != nil {
+	if err = e.EncodeString(m.DataType); err != nil {
 		return
 	}
 
-	if err = e.Encode(m.Data); err != nil {
+	if err = e.EncodeBytes(m.Data); err != nil {
 		return
 	}
 
@@ -175,17 +167,10 @@ func decodeEvent(d *msgpack.Decoder, v reflect.Value) (err error) {
 		m.UpdatedAt = time.Unix(0, secsUpdatedAt)
 	}
 
-	if err = d.Decode(&m.DataType); err != nil {
+	if m.DataType, err = d.DecodeString(); err != nil {
 		return
 	}
-
-	if m.Data, err = FactoryDataObj(m.DataType); err != nil {
-		if err = d.Skip(); err != nil {
-			return
-		}
-		log.Printf("hey: not supported data type DataType(%d)", m.DataType)
-		return ErrNotRegDataType
-	} else if err = d.Decode(&m.Data); err != nil {
+	if m.Data, err = d.DecodeBytes(); err != nil {
 		return
 	}
 
@@ -305,11 +290,11 @@ func encodeUser(e *msgpack.Encoder, v reflect.Value) (err error) {
 		return
 	}
 
-	if err = e.Encode(m.DataType); err != nil {
+	if err = e.EncodeString(m.DataType); err != nil {
 		return
 	}
 
-	if err = e.Encode(m.Data); err != nil {
+	if err = e.EncodeBytes(m.Data); err != nil {
 		return
 	}
 
@@ -331,17 +316,10 @@ func decodeUser(d *msgpack.Decoder, v reflect.Value) (err error) {
 	if m.UserID, err = d.DecodeString(); err != nil {
 		return
 	}
-	if err = d.Decode(&m.DataType); err != nil {
+	if m.DataType, err = d.DecodeString(); err != nil {
 		return
 	}
-
-	if m.Data, err = FactoryDataObj(m.DataType); err != nil {
-		if err = d.Skip(); err != nil {
-			return
-		}
-		log.Printf("hey: not supported data type DataType(%d)", m.DataType)
-		return ErrNotRegDataType
-	} else if err = d.Decode(&m.Data); err != nil {
+	if m.Data, err = d.DecodeBytes(); err != nil {
 		return
 	}
 
@@ -363,11 +341,11 @@ func encodeRelatedData(e *msgpack.Encoder, v reflect.Value) (err error) {
 		return
 	}
 
-	if err = e.Encode(m.DataType); err != nil {
+	if err = e.EncodeString(m.DataType); err != nil {
 		return
 	}
 
-	if err = e.Encode(m.Data); err != nil {
+	if err = e.EncodeBytes(m.Data); err != nil {
 		return
 	}
 
@@ -392,17 +370,10 @@ func decodeRelatedData(d *msgpack.Decoder, v reflect.Value) (err error) {
 	if m.EventID, err = d.DecodeString(); err != nil {
 		return
 	}
-	if err = d.Decode(&m.DataType); err != nil {
+	if m.DataType, err = d.DecodeString(); err != nil {
 		return
 	}
-
-	if m.Data, err = FactoryDataObj(m.DataType); err != nil {
-		if err = d.Skip(); err != nil {
-			return
-		}
-		log.Printf("hey: not supported data type DataType(%d)", m.DataType)
-		return ErrNotRegDataType
-	} else if err = d.Decode(&m.Data); err != nil {
+	if m.Data, err = d.DecodeBytes(); err != nil {
 		return
 	}
 

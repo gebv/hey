@@ -1,6 +1,7 @@
 package hey
 
 import (
+	"encoding/json"
 	"testing"
 	"time"
 
@@ -153,22 +154,31 @@ func TestRecentActivityThreadline(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 2, len(events))
 
-	RegDataType(1, func() interface{} {
-		return &TestData{}
-	})
-
 	rd := RelatedData{
 		UserID:   user1.UserID,
 		EventID:  event1.EventID,
-		DataType: 1,
-		Data:     TestData{"hello"},
+		DataType: "1",
+		Data:     TestData{"hello"}.Marshall(),
 	}
 
 	err = chrono.SetRelatedData(&rd)
 	assert.NoError(t, err)
 
+	eo, err := chrono.GetRelatedDatas(user1.UserID, *event1)
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(eo))
+	var td TestData
+	err = json.Unmarshal(eo[0].RelatedData.Data, &td)
+	assert.NoError(t, err)
+	assert.Equal(t, td.Msg, "hello")
+
 }
 
 type TestData struct {
 	Msg string
+}
+
+func (t TestData) Marshall() []byte {
+	bts, _ := json.Marshal(t)
+	return bts
 }

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"log"
 
 	chronograph "github.com/gebv/hey"
@@ -52,8 +53,11 @@ func main() {
 	if len(events) != 1 {
 		log.Fatalln("длинна событий != 1", len(events))
 	}
-	if _, ok := events[0].Data.(*NotificationData); !ok {
-		log.Fatalln("ошибка декодирования данных")
+	var nd NotificationData
+	err = json.Unmarshal(events[0].Data, &nd)
+	checkErr(err)
+	if nd.Title != "Событие" {
+		log.Fatalln("ошибка ")
 	}
 
 	// добавляем произвольные данные к событию, видные только данному
@@ -70,12 +74,11 @@ func main() {
 		log.Fatalln("не хватает")
 	}
 
-	if bm, ok := eventObseres[0].RelatedData.Data.(*Bookmark); ok {
-		if !bm.Bookmarked {
-			log.Fatalln("не добавилось в избранное")
-		}
-	} else {
-		log.Fatalln("ошибка декодинга")
+	var bm Bookmark
+	err = json.Unmarshal(eventObseres[0].RelatedData.Data, &bm)
+	checkErr(err)
+	if !bm.Bookmarked {
+		log.Fatalln("не добавилось в избранное")
 	}
 
 	log.Println("done")

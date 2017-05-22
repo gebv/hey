@@ -25,8 +25,8 @@ type Thread struct {
 	// Activity or RecentActivityByLastTS
 	ThreadlineEnabled bool
 
-	DataType DataType
-	Data     interface{}
+	DataType string
+	Data     []byte
 }
 
 // Events
@@ -38,8 +38,8 @@ type Event struct {
 	CreatedAt time.Time
 	UpdatedAt time.Time
 
-	DataType DataType
-	Data     interface{}
+	DataType string
+	Data     []byte
 }
 
 // Observer это таблица для хранения подписок на трэды.
@@ -66,8 +66,8 @@ type Sources struct {
 // User подписчик, обозреватель,
 type User struct {
 	UserID   string
-	DataType DataType
-	Data     interface{}
+	DataType string
+	Data     []byte
 }
 
 // RelatedData связанные с событием данные юзера
@@ -75,8 +75,8 @@ type User struct {
 type RelatedData struct {
 	UserID   string
 	EventID  string
-	DataType DataType
-	Data     interface{}
+	DataType string
+	Data     []byte
 }
 
 type EventObserver struct {
