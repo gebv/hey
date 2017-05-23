@@ -239,7 +239,7 @@ func (m *TarantoolManager) RecentActivity(userID, threadID string, limit,
 // CountEvents возвращает количество событий после даты t
 func (m *TarantoolManager) CountEvents(userID, threadID string, t time.Time, limit, offset uint32) (count uint32, next bool, err error) {
 	var counts []int
-	err = m.conn.Call17Typed("count_events", makeKey(userID, threadID, t.Nanosecond(), limit, offset), &counts)
+	err = m.conn.Call17Typed("count_events", makeKey(userID, threadID, t.UnixNano(), limit, offset), &counts)
 	if err != nil {
 		return 0, false, err
 	}
