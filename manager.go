@@ -17,6 +17,7 @@ type Manager interface {
 	//RemoveSource(dstThread, sourceThread string) error
 
 	// user subscriptions
+	GetObserver(userID, threadID string) (*Observer, error)
 	Observe(userID, threadID string) error
 	Ignore(userID, threadID string) error
 	Observes(userID string, offset, limit uint32) (obs []Observer, threads []Thread, err error)
