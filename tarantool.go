@@ -170,8 +170,7 @@ func (m *TarantoolManager) Observers(threadID string, offset, limit uint32) (obs
 func (m *TarantoolManager) Observes(
 	userID string,
 	offset,
-	limit uint32) (threads []Thread, err error) {
-	var obs []Observer
+	limit uint32) (obs []Observer, threads []Thread, err error) {
 	err = m.conn.SelectTyped(observerSpace, "subs_thread_id_idx", offset, limit,
 		tarantool.IterReq, makeKey(userID), &obs)
 	if err != nil {
