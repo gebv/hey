@@ -6,13 +6,13 @@ type Chronograph struct {
 }
 
 // New create chronograph with default manager (tarantool)
-// func New() (*Chronograph, error) {
-// 	manager, err := NewTarantoolManager()
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	return NewWithManager(manager)
-// }
+func New() (*Chronograph, error) {
+	manager, err := NewTarantoolManagerWithOpts()
+	if err != nil {
+		return nil, err
+	}
+	return NewWithManager(manager)
+}
 
 // NewWithManager create chronograph with passed store
 func NewWithManager(manager Manager) (*Chronograph, error) {

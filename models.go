@@ -9,6 +9,8 @@ var (
 	ErrMsgPackConflictFields = errors.New("msgpack serializator: conflict num fields or another error")
 	ErrNotRegDataType        = errors.New("not registred data type")
 	ErrEmptyThreadID         = errors.New("empty thread id")
+
+	ErrEmptyResponse = errors.New("empty")
 )
 
 // Thread
@@ -23,8 +25,8 @@ type Thread struct {
 	// Activity or RecentActivityByLastTS
 	ThreadlineEnabled bool
 
-	DataType DataType
-	Data     interface{}
+	DataType string
+	Data     []byte
 }
 
 // Events
@@ -36,8 +38,8 @@ type Event struct {
 	CreatedAt time.Time
 	UpdatedAt time.Time
 
-	DataType DataType
-	Data     interface{}
+	DataType string
+	Data     []byte
 }
 
 // Observer это таблица для хранения подписок на трэды.
@@ -49,6 +51,7 @@ type Observer struct {
 	// ID трэда, на который подписан юзер
 	ThreadID          string
 	LastDeliveredTime time.Time
+	JoinTime          time.Time
 }
 
 // Sources таблица источников каджого трэда.
@@ -63,8 +66,8 @@ type Sources struct {
 // User подписчик, обозреватель,
 type User struct {
 	UserID   string
-	DataType DataType
-	Data     interface{}
+	DataType string
+	Data     []byte
 }
 
 // RelatedData связанные с событием данные юзера
@@ -72,8 +75,8 @@ type User struct {
 type RelatedData struct {
 	UserID   string
 	EventID  string
-	DataType DataType
-	Data     interface{}
+	DataType string
+	Data     []byte
 }
 
 type EventObserver struct {

@@ -1,6 +1,7 @@
 package hey
 
 import (
+	"encoding/json"
 	"testing"
 	"time"
 
@@ -22,6 +23,8 @@ func TestRecentActivity(t *testing.T) {
 
 	err = chrono.Observe(user1.UserID, thread.ThreadID)
 	assert.NoError(t, err)
+
+	ts := time.Now()
 
 	event1 := &Event{
 		ThreadID:  thread.ThreadID,
@@ -55,6 +58,11 @@ func TestRecentActivity(t *testing.T) {
 	assert.Equal(t, event4.EventID, events[0].EventID)
 	assert.Equal(t, event3.EventID, events[1].EventID)
 	assert.Equal(t, event2.EventID, events[2].EventID)
+
+	cnt, next, err := chrono.CountEvents(user1.UserID, thread.ThreadID, ts, 4, 0)
+	assert.NoError(t, err)
+	assert.Equal(t, uint32(4), cnt)
+	assert.True(t, next)
 }
 
 func TestRecentActivityThreadline(t *testing.T) {
@@ -66,6 +74,9 @@ func TestRecentActivityThreadline(t *testing.T) {
 		ThreadlineEnabled: true,
 	}
 	err = chrono.NewThread(thread)
+	assert.NoError(t, err)
+
+	thread, err = chrono.GetThread(thread.ThreadID)
 	assert.NoError(t, err)
 
 	thread2 := &Thread{}
@@ -109,7 +120,8 @@ func TestRecentActivityThreadline(t *testing.T) {
 	threads, err := chrono.Observes(user3.UserID, 0, 2)
 	assert.NoError(t, err)
 	assert.Equal(t, 2, len(threads))
-	// TODO: проверить гарантированный порядок добавления тредов под наблюдение (после правки models.Observer)
+	assert.Equal(t, thread2.ThreadID, threads[0].ThreadID)
+	assert.Equal(t, thread.ThreadID, threads[1].ThreadID)
 
 	// невозможно проверить
 	now := time.Now()
@@ -142,4 +154,31 @@ func TestRecentActivityThreadline(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 2, len(events))
 
+	rd := RelatedData{
+		UserID:   user1.UserID,
+		EventID:  event1.EventID,
+		DataType: "1",
+		Data:     TestData{"hello"}.Marshall(),
+	}
+
+	err = chrono.SetRelatedData(&rd)
+	assert.NoError(t, err)
+
+	eo, err := chrono.GetRelatedDatas(user1.UserID, *event1)
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(eo))
+	var td TestData
+	err = json.Unmarshal(eo[0].RelatedData.Data, &td)
+	assert.NoError(t, err)
+	assert.Equal(t, td.Msg, "hello")
+
+}
+
+type TestData struct {
+	Msg string
+}
+
+func (t TestData) Marshall() []byte {
+	bts, _ := json.Marshal(t)
+	return bts
 }

@@ -1,22 +1,16 @@
 package main
 
-import chronograph "github.com/gebv/hey"
+import (
+	"encoding/json"
 
-const (
-	NotificationDataType chronograph.DataType = 1
-
-	BookmarkDataType chronograph.DataType = 2
+	chronograph "github.com/gebv/hey"
 )
 
-func init() {
-	chronograph.RegDataType(NotificationDataType, func() interface{} {
-		return &NotificationData{}
-	})
+const (
+	NotificationDataType = "1"
 
-	chronograph.RegDataType(BookmarkDataType, func() interface{} {
-		return &Bookmark{}
-	})
-}
+	BookmarkDataType = "2"
+)
 
 func NewNotification(
 	title string,
@@ -24,10 +18,10 @@ func NewNotification(
 ) chronograph.Event {
 	return chronograph.Event{
 		DataType: NotificationDataType,
-		Data: &NotificationData{
+		Data: NotificationData{
 			Title: title,
 			Body:  body,
-		},
+		}.Marshal(),
 	}
 }
 
@@ -36,8 +30,21 @@ type NotificationData struct {
 	Body  string
 }
 
+func (n NotificationData) Marshal() []byte {
+	bts, _ := json.Marshal(n)
+	return bts
+}
+
 type Bookmark struct {
 	Bookmarked bool
+}
+
+func (n Bookmark) Marshal() []byte {
+	bts, err := json.Marshal(n)
+	if err != nil {
+		panic(err)
+	}
+	return bts
 }
 
 func NewBookmark(userID string, eventID string, bookmarked bool) chronograph.RelatedData {
@@ -45,6 +52,6 @@ func NewBookmark(userID string, eventID string, bookmarked bool) chronograph.Rel
 		UserID:   userID,
 		EventID:  eventID,
 		DataType: BookmarkDataType,
-		Data:     &Bookmark{Bookmarked: bookmarked},
+		Data:     Bookmark{Bookmarked: bookmarked}.Marshal(),
 	}
 }
