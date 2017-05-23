@@ -161,23 +161,8 @@ func (m *TarantoolManager) Ignore(userID, threadID string) (err error) {
 }
 
 // Observers возвращает подписчиков трэда
-func (m *TarantoolManager) Observers(threadID string, offset, limit uint32) (users []User, err error) {
-	var obs []Observer
+func (m *TarantoolManager) Observers(threadID string, offset, limit uint32) (users []Observer, err error) {
 	err = m.conn.SelectTyped(observerSpace, "primary", offset, limit, tarantool.IterReq, makeKey(threadID), &obs)
-	if err != nil {
-		return
-	}
-
-	for _, o := range obs {
-		var u []User
-		err = m.get(usersSpace, "primary", makeKey(o.UserID), &u)
-		if err != nil {
-			return
-		}
-		if len(u) == 1 {
-			users = append(users, u[0])
-		}
-	}
 	return
 }
 
