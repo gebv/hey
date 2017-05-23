@@ -166,6 +166,29 @@ func (m *TarantoolManager) Observers(threadID string, offset, limit uint32) (obs
 	return
 }
 
+
+// 
+func (m *TarantoolManager) GetObserver(userID, threadID string) (
+	obs *Observer,
+	err error,
+) {
+	var list []Observer
+	err = m.conn.SelectTyped(
+		observerSpace,
+		"primary",
+		0, 1, tarantool.IterEq,
+		makeKey(threadID, userID),
+		&list,
+	)
+	if err != nil {
+		return nil, err
+	}
+	if len(list) == 0 {
+		return nil, ErrNotFound
+	}
+	return &list[0], nil
+}
+
 // Observes возвращает подписки юзера
 func (m *TarantoolManager) Observes(
 	userID string,
