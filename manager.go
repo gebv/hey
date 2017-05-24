@@ -21,7 +21,6 @@ type Manager interface {
 	Observe(userID, threadID string) error
 	Ignore(userID, threadID string) error
 	Observes(userID string, offset, limit uint32) (obs []Observer, threads []Thread, err error)
-	Observes(userID string, offset, limit uint32) ([]Thread, error)
 	MarkAsDelivered(userID string, threadID string, times ...time.Time) error
 
 	// threadline
