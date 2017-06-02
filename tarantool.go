@@ -166,8 +166,7 @@ func (m *TarantoolManager) Observers(threadID string, offset, limit uint32) (obs
 	return
 }
 
-
-// 
+//
 func (m *TarantoolManager) GetObserver(userID, threadID string) (
 	obs *Observer,
 	err error,
@@ -227,7 +226,7 @@ func (m *TarantoolManager) MarkAsDelivered(userID, threadID string, times ...tim
 // Activity события двигаться по limit,offset что предлагает tnt
 func (m *TarantoolManager) activity(threadID string, limit,
 	offset uint32) (events []Event, err error) {
-	err = m.conn.SelectTyped(eventsSpace, "threadline_idx", limit, offset, tarantool.IterReq, makeKey(threadID), &events)
+	err = m.conn.SelectTyped(eventsSpace, "threadline_idx", offset, limit, tarantool.IterReq, makeKey(threadID), &events)
 	if err != nil {
 		return
 	}
@@ -371,12 +370,12 @@ func (m *TarantoolManager) SetRelatedData(rel *RelatedData) (err error) {
 func (m *TarantoolManager) GetRelatedDatas(userID string, events ...Event) (obs []EventObserver, err error) {
 	for _, ev := range events {
 		var rel []RelatedData
-		err = m.get(relatedSpace, "primary", makeKey(userID, ev.EventID), &rel)
-		if err != nil {
-			return
-		}
+		m.get(relatedSpace, "primary", makeKey(userID, ev.EventID), &rel)
+
 		if len(rel) == 1 {
-			obs = append(obs, EventObserver{Event: ev, RelatedData: rel[0]})
+			obs = append(obs, EventObserver{Event: ev, RelatedData: &rel[0]})
+		} else {
+			obs = append(obs, EventObserver{Event: ev})
 		}
 	}
 

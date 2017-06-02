@@ -82,5 +82,5 @@ type RelatedData struct {
 type EventObserver struct {
 	Event Event
 
-	RelatedData RelatedData
+	RelatedData *RelatedData
 }
